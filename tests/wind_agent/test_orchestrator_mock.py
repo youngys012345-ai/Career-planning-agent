@@ -25,14 +25,18 @@ def test_mock_pipeline_shows_salary_and_latest():
     assert pack.online["qualified_count"] >= 3
     assert "预期薪资" in html
     assert "求职风向" in html
-    assert "人在回路" in html
+    assert "这份报告哪里不对" in html
     assert "均数" in html
-    assert "P25" not in html
+    assert "sal-box" in html
+    assert "在线可见公司" not in html
+    assert "岗位标题簇" not in html
     assert "最新进展" not in html
     assert "就业难度" not in html
     assert "Evidence Pack" not in html
-    # 薪资条应按均数比例延伸
-    assert any((c.get("bar_pct") or 0) > 0 for c in pack.metrics["salary_by_city"])
+    # 箱线图定位在 0～50k 轴上
+    assert any((c.get("box_width_pct") or 0) > 0 for c in pack.metrics["salary_by_city"])
+    assert pack.generated["latest"].get("analysis")
+    assert pack.generated["latest"].get("source_platform")
 
 
 def test_hide_salary_and_latest_when_gated():

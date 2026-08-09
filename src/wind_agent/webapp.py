@@ -33,11 +33,16 @@ class ReportRequest(BaseModel):
 
 
 class HitlRequest(BaseModel):
-    """人在回路：仅改方向/城市后重算。"""
+    """人在回路：追问 / 快捷动作 / 改方向城市后重算。"""
 
     report_id: str
     direction: str | None = None
     cities: list[str] | None = None
+    followup: str | None = None
+    action: str | None = Field(
+        default=None,
+        description="reject_conclusion | exclude_jobs | add_city | regenerate",
+    )
 
 
 def _dashscope_configured() -> bool:
@@ -303,6 +308,8 @@ def create_app() -> FastAPI:
                 old,
                 direction=req.direction,
                 cities=req.cities,
+                followup=req.followup or "",
+                action=req.action or "",
                 use_real_metrics=not bool(old.flags.get("is_mock")),
                 show_m11=True,
                 report_id=new_id,

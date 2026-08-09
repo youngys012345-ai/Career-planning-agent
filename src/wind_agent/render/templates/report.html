@@ -120,33 +120,72 @@
   .ctable td { padding: 10px; border-bottom: 1px dashed var(--line); }
   .ctable .cn { font-weight: 700; }
 
-  .sal-row { margin-top: 14px; }
+  .sal-row { margin-top: 16px; }
   .sal-row .lab { font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
   .sal-row .lab .val { font-size: 12px; color: var(--ink2); font-weight: 400; }
   .sal-chart {
-    margin-top: 6px; height: 14px; background: #e8eeec; border-radius: 99px; overflow: hidden;
+    position: relative; margin-top: 8px; height: 28px;
+    background: linear-gradient(90deg, #eef2f1 0%, #e8eeec 100%);
+    border-radius: 8px; border: 1px solid #dde6e2;
   }
-  .sal-bar {
-    height: 100%; border-radius: 99px;
+  .sal-box {
+    position: absolute; top: 6px; height: 16px; border-radius: 6px;
     background: linear-gradient(90deg, #7ec4b8, #0d6e6e);
-    min-width: 4px;
+    opacity: .92;
   }
-  .hitl-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .sal-mean {
+    position: absolute; top: 3px; width: 3px; height: 22px;
+    background: #0f1c1a; border-radius: 2px;
+  }
+  .sal-axis {
+    display: flex; justify-content: space-between; margin-top: 4px;
+    font-size: 10.5px; color: var(--ink3);
+  }
+  .sal-legend { font-size: 11.5px; color: var(--ink3); margin: 0 0 4px; }
+
+  .wind-body { font-size: 13.5px; color: var(--ink2); line-height: 1.75; }
+  .wind-hl { margin: 12px 0 0; padding-left: 18px; color: var(--ink2); font-size: 13px; }
+  .wind-hl li { margin-bottom: 6px; }
+  .wind-src {
+    margin-top: 12px; font-size: 12px; color: var(--ink3);
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .wind-src span {
+    background: #f0f5f3; border-radius: 999px; padding: 3px 10px; font-weight: 600;
+  }
+
+  .hitl {
+    margin-top: 16px; border-radius: var(--radius); padding: 20px 22px;
+    background: linear-gradient(145deg, #1a2332 0%, #243044 100%);
+    color: #e8eef5;
+  }
+  .hitl h2 {
+    font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hitl .sub { font-size: 12px; color: #9aabbd; margin: 0 0 14px; line-height: 1.55; }
+  .hitl-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .hitl-btn {
-    border: 1px solid var(--sea); background: #fff; color: var(--sea-deep);
+    border: 1px solid #4a5d73; background: transparent; color: #d7e2ee;
     border-radius: 8px; padding: 8px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit;
   }
-  .hitl-btn:hover { background: #e8f5f2; }
-  .hitl-btn.primary { background: var(--sea); color: #fff; }
-  .hitl-status { margin-top: 10px; font-size: 12.5px; color: var(--ink2); min-height: 1.2em; }
-  .hitl-status.err { color: #b33; }
-
-  .live { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .live .c {
-    border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: #f8fbfa;
+  .hitl-btn:hover { background: rgba(255,255,255,.06); }
+  .hitl-btn.danger { border-color: #c45c5c; color: #ffb4b4; }
+  .hitl-btn.primary { background: #fff; color: #1a2332; border-color: #fff; font-weight: 600; }
+  .ask-box {
+    margin-top: 14px; display: flex; gap: 8px; align-items: stretch;
   }
-  .live .k { font-size: 11px; color: var(--ink3); }
-  .live .v { font-size: 13px; font-weight: 600; margin-top: 4px; line-height: 1.5; }
+  .ask-box input {
+    flex: 1; border: 1px solid #3d4f63; background: #121a26; color: #e8eef5;
+    border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: inherit;
+  }
+  .ask-box input::placeholder { color: #7a8c9e; }
+  .ask-box button {
+    border: none; background: #2f6fed; color: #fff; border-radius: 8px;
+    padding: 0 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .hitl-status { margin-top: 10px; font-size: 12.5px; color: #9aabbd; min-height: 1.2em; }
+  .hitl-status.err { color: #ffb4b4; }
 
   .road { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .stage {
@@ -162,7 +201,7 @@
   .stage li { margin-bottom: 8px; line-height: 1.55; }
 
   @media (max-width: 720px) {
-    .split, .road, .live, .dir-row { grid-template-columns: 1fr; }
+    .split, .road, .dir-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -268,28 +307,39 @@
 
   {% if pack.flags.show_m6 and pack.metrics.salary_by_city %}
   <section class="card">
-    <h2><span class="num">5</span>预期薪资</h2>
+    <h2><span class="num">5</span>预期薪资范围（月薪 · 应届档）</h2>
+    <p class="sal-legend">色块 = P25～P75 区间，竖线 = 均数；横轴统一 0～50k</p>
     {% for s in pack.metrics.salary_by_city[:8] %}
     <div class="sal-row">
       <div class="lab">
-        <span>{{ s.city }}</span>
-        <span class="val">均数 {{ s.mean_k }}k</span>
+        <span>{{ s.city }} · {{ pack.query_plan.direction }}</span>
+        <span class="val">P25 {{ s.p25 }}k · 均数 {{ s.mean_k }}k · P75 {{ s.p75 }}k</span>
       </div>
       <div class="sal-chart">
-        <div class="sal-bar" style="width:{{ s.bar_pct or 0 }}%"></div>
+        <div class="sal-box" style="left:{{ s.box_left_pct or 0 }}%;width:{{ s.box_width_pct or 1 }}%"></div>
+        <div class="sal-mean" style="left:{{ s.mean_left_pct or 0 }}%"></div>
       </div>
+      <div class="sal-axis"><span>0</span><span>10k</span><span>20k</span><span>30k</span><span>50k</span></div>
     </div>
     {% endfor %}
+    <div class="data-note">* 以上分位与均数根据薪资库应届/1年以下档统计，仅供参考</div>
   </section>
   {% endif %}
 
   {% if pack.flags.show_m9 and pack.generated.latest and pack.generated.latest.show_m9 %}
   <section class="card">
     <h2><span class="num">6</span>求职风向</h2>
-    <div class="live">
-      {% for card in pack.generated.latest.cards or [] %}
-      <div class="c"><div class="k">{{ card.k }}</div><div class="v">{{ card.v }}</div></div>
-      {% endfor %}
+    <div class="wind-body">{{ pack.generated.latest.analysis }}</div>
+    {% if pack.generated.latest.highlights %}
+    <ul class="wind-hl">
+      {% for h in pack.generated.latest.highlights %}<li>{{ h }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <div class="wind-src">
+      <span>数据来源平台：{{ pack.generated.latest.source_platform or '在线招聘平台' }}</span>
+      {% if pack.generated.latest.online_count %}
+      <span>在线样本 {{ pack.generated.latest.online_count }} 条</span>
+      {% endif %}
     </div>
   </section>
   {% endif %}
@@ -310,62 +360,63 @@
   </section>
 
   {% if pack.flags.show_m11 %}
-  <section class="card" id="hitl">
-    <h2><span class="num">8</span>人在回路</h2>
-    <p style="font-size:13px;color:var(--ink2);margin-bottom:4px">可改意愿方向或关注城市，报告将按新约束局部重算（板式不变）。</p>
-    <div class="hitl-row" id="hitlDirs">
-      <button type="button" class="hitl-btn" data-dir="数据分析">方向：数据分析</button>
-      <button type="button" class="hitl-btn" data-dir="产品经理">方向：产品经理</button>
-      <button type="button" class="hitl-btn" data-dir="后端开发">方向：后端开发</button>
-      <button type="button" class="hitl-btn" data-dir="算法">方向：算法</button>
-    </div>
-    <div class="hitl-row" id="hitlCities">
-      <button type="button" class="hitl-btn" data-city="上海">城市：上海</button>
-      <button type="button" class="hitl-btn" data-city="北京">城市：北京</button>
-      <button type="button" class="hitl-btn" data-city="杭州">城市：杭州</button>
-      <button type="button" class="hitl-btn" data-city="深圳">城市：深圳</button>
-      <button type="button" class="hitl-btn" data-city="成都">城市：成都</button>
-    </div>
+  <section class="hitl" id="hitl">
+    <h2>🔄 这份报告哪里不对？</h2>
+    <p class="sub">可整体驳回，也可点选快捷动作局部重算；追问后重新生成并保留原报告链接可回看。</p>
     <div class="hitl-row">
-      <button type="button" class="hitl-btn primary" id="hitlApply">按所选约束重算</button>
+      <button type="button" class="hitl-btn danger" data-action="reject_conclusion">✕ 驳回某个结论</button>
+      <button type="button" class="hitl-btn" data-action="exclude_jobs">⊘ 排除某类岗位（如外包/销售性质）</button>
+      <button type="button" class="hitl-btn" data-action="add_city">＋ 增加对比城市</button>
+      <button type="button" class="hitl-btn primary" data-action="regenerate" id="hitlRegen">↻ 按追问重新生成</button>
+    </div>
+    <div class="ask-box">
+      <input id="hitlFollowup" placeholder="继续追问，例如：西安和武汉怎么样？/ 对比下数据运营方向…">
+      <button type="button" id="hitlSend">发送</button>
     </div>
     <div class="hitl-status" id="hitlStatus"></div>
   </section>
   <script>
   (function () {
     const reportId = {{ (report_id or '')|tojson }};
-    if (!reportId) {
-      document.getElementById("hitlStatus").textContent = "当前为静态报告预览，请从 Web 首页生成报告以启用重算。";
-      return;
-    }
-    let direction = {{ pack.query_plan.direction|tojson }};
-    let cities = {{ pack.query_plan.cities|tojson }};
-    const dirBtns = document.querySelectorAll("#hitlDirs .hitl-btn");
-    const cityBtns = document.querySelectorAll("#hitlCities .hitl-btn");
-    function mark(btns, attr, value) {
-      btns.forEach((b) => {
-        b.classList.toggle("primary", b.getAttribute(attr) === value);
-      });
-    }
-    mark(dirBtns, "data-dir", direction);
-    if (cities && cities.length === 1) mark(cityBtns, "data-city", cities[0]);
-    dirBtns.forEach((b) => b.addEventListener("click", () => {
-      direction = b.getAttribute("data-dir");
-      mark(dirBtns, "data-dir", direction);
-    }));
-    cityBtns.forEach((b) => b.addEventListener("click", () => {
-      cities = [b.getAttribute("data-city")];
-      mark(cityBtns, "data-city", cities[0]);
-    }));
-    document.getElementById("hitlApply").addEventListener("click", async () => {
-      const status = document.getElementById("hitlStatus");
+    const direction = {{ pack.query_plan.direction|tojson }};
+    const cities = {{ pack.query_plan.cities|tojson }};
+    const status = document.getElementById("hitlStatus");
+    const input = document.getElementById("hitlFollowup");
+
+    async function runHitl(action) {
+      if (!reportId) {
+        status.textContent = "当前为静态报告预览，请从 Web 首页生成报告以启用重算。";
+        status.className = "hitl-status err";
+        return;
+      }
+      const followup = (input.value || "").trim();
+      if (action === "regenerate" && !followup) {
+        status.textContent = "请先填写追问内容，或点选上方快捷动作。";
+        status.className = "hitl-status err";
+        return;
+      }
+      if (action === "exclude_jobs" && !followup) {
+        input.value = "不考虑外包/销售性质的数据岗";
+      }
+      if (action === "add_city" && !followup) {
+        input.value = "请增加西安和武汉作为对比城市";
+      }
+      if (action === "reject_conclusion" && !followup) {
+        input.value = "请重新审视第1部分结论，证据不足的表述请改写或删除";
+      }
       status.className = "hitl-status";
-      status.textContent = "正在按新约束重算…";
+      status.textContent = "正在按人在回路反馈重算…";
       try {
         const res = await fetch("/api/hitl", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ report_id: reportId, direction, cities })
+          body: JSON.stringify({
+            report_id: reportId,
+            direction,
+            cities,
+            action: action || "regenerate",
+            followup: (input.value || "").trim()
+          })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "重算失败");
@@ -374,6 +425,14 @@
         status.textContent = err.message || "请求失败";
         status.className = "hitl-status err";
       }
+    }
+
+    document.querySelectorAll("#hitl [data-action]").forEach((btn) => {
+      btn.addEventListener("click", () => runHitl(btn.getAttribute("data-action")));
+    });
+    document.getElementById("hitlSend").addEventListener("click", () => runHitl("regenerate"));
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") runHitl("regenerate");
     });
   })();
   </script>

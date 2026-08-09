@@ -423,49 +423,122 @@ def build_core_conclusions(pack_summary: dict[str, Any] | None = None) -> dict[s
     return _stub_core_conclusions(pack_summary)
 
 
-def build_latest_progress(online: dict[str, Any] | None = None) -> dict[str, Any]:
-    """求职风向：仅基于在线浅采合格样本，不混入离线详情库。"""
-    online = online or {}
-    if not online.get("show_m9"):
-        return {"show_m9": False, "cards": [], "title": "求职风向"}
-    items = online.get("items") or []
-    companies: list[str] = []
-    for x in items:
-        c = (x.get("company") or "").strip()
-        if c and c not in companies:
-            companies.append(c)
-        if len(companies) >= 6:
-            break
-    titles: list[str] = []
-    for x in items:
-        t = (x.get("job_title") or "").strip()
-        if t and t not in titles:
-            titles.append(t)
-        if len(titles) >= 6:
-            break
-    cities = sorted({(x.get("city") or "").strip() for x in items if (x.get("city") or "").strip()})
+_SOURCE_LABEL = {"zhilian": "智联招聘", "liepin": "猎聘", "boss": "BOSS直聘"}
+
+
+def _source_platform_text(online: dict[str, Any], items: list[dict[str, Any]]) -> str:
     sources = online.get("sources") or sorted(
         {(x.get("source") or "").strip() for x in items if (x.get("source") or "").strip()}
     )
-    source_label = {
-        "zhilian": "智联",
-        "liepin": "猎聘",
-        "boss": "BOSS",
-    }
-    source_text = "、".join(source_label.get(s, s) for s in sources) or "在线"
+    return "、".join(_SOURCE_LABEL.get(s, s) for s in sources if s) or "在线招聘平台"
 
-    cards = [
-        {"k": "在线可见公司", "v": "、".join(companies) or "—"},
-        {"k": "岗位标题簇", "v": "、".join(titles) or "—"},
-        {"k": "出现城市", "v": "、".join(cities) or "—"},
-        {"k": "浅采来源", "v": source_text},
-    ]
+
+def _stub_wind_analysis(
+    direction: str,
+    items: list[dict[str, Any]],
+    source_platform: str,
+) -> str:
+    n = len(items)
+    titles = [x.get("job_title") or "" for x in items[:5] if x.get("job_title")]
+    cities = sorted({(x.get("city") or "").strip() for x in items if (x.get("city") or "").strip()})
+    title_hint = "、".join(titles[:3]) if titles else direction
+    city_hint = "、".join(cities[:5]) if cities else "多城"
+    return (
+        f"基于本次在线浅采的 {n} 条「{direction}」相关岗位（数据来源：{source_platform}），"
+        f"当前截面标题多集中在「{title_hint}」一类，地域覆盖包括 {city_hint}。"
+        f"综合 JD 描述可见：业务取数、指标监控与报表/专题分析仍是主流交付；"
+        f"部分岗位同时提到 Python/SQL 或可视化工具，呈现「分析+工具」双轨要求。"
+        f"相较仅看离线历史库，在线截面更能反映近端标题用词与城市分布的即时构成，"
+        f"建议把在线能力关键词与离线词频对照，优先补齐两边同时高频的技能。"
+        f"（本段为 stub 降级文案，未调用模型。）"
+    )
+
+
+def build_latest_progress(
+    online: dict[str, Any] | None = None,
+    direction: str = "",
+    user_query: str = "",
+) -> dict[str, Any]:
+    """求职风向：基于在线 JD 做综合风向分析（不展示公司/标题/城市卡片列表）。"""
+    online = online or {}
+    if not online.get("show_m9"):
+        return {"show_m9": False, "title": "求职风向", "analysis": "", "source_platform": ""}
+
+    items = online.get("items") or []
+    source_platform = _source_platform_text(online, items)
+    direction = direction or "目标方向"
+
+    jd_blocks: list[str] = []
+    for i, x in enumerate(items[:12], 1):
+        desc = (x.get("description") or "").strip()
+        jd_blocks.append(
+            f"[{i}] 标题：{x.get('job_title') or '—'} | 城市：{x.get('city') or '—'} | "
+            f"公司：{x.get('company') or '—'} | 来源：{_SOURCE_LABEL.get(x.get('source') or '', x.get('source') or '—')}\n"
+            f"JD：{desc[:500] if desc else '（无详情摘要）'}"
+        )
+    jd_text = "\n\n".join(jd_blocks)
+
+    system_prompt = (
+        "你是「求职风向」分析模块，面向校招前期学生。"
+        "任务：仅依据给定的在线浅采岗位样本（标题/城市/公司/JD 片段），写一份简短的风向变化与截面综合分析。"
+        "要求：\n"
+        "1) 输出 JSON：{\"analysis\":\"...\",\"highlights\":[\"要点1\",\"要点2\",\"要点3\"]}；"
+        "analysis 为 180～320 字连贯段落，highlights 3 条短句。\n"
+        "2) 综合讨论：岗位形态与标题用词、能力要求共性、地域/行业侧写（若样本有）、"
+        "与「传统离线历史库印象」相比，本次在线截面可能意味着什么（机会新旧、能力侧重点）。\n"
+        "3) 禁止编造样本中未出现的公司名、薪资数字、录用难度或「好不好进」。\n"
+        "4) 不要输出公司清单、标题列表或城市枚举式罗列；要写成分析叙述。\n"
+        "5) 个人背景只可作准备语境，不作人岗匹配结论。"
+    )
+    user_prompt = (
+        f"用户提问：{user_query or '（未提供）'}\n"
+        f"意愿方向：{direction}\n"
+        f"数据来源平台：{source_platform}\n"
+        f"在线合格样本数：{len(items)}\n\n"
+        f"在线岗位样本：\n{jd_text}"
+    )
+
+    content = llm.chat(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+    )
+    analysis = ""
+    highlights: list[str] = []
+    model_tag = "stub"
+    if content:
+        try:
+            import json as _json
+
+            parsed = _json.loads(llm.extract_json_text(content))
+            if isinstance(parsed, dict):
+                analysis = (parsed.get("analysis") or "").strip()
+                hl = parsed.get("highlights") or []
+                if isinstance(hl, list):
+                    highlights = [str(x).strip() for x in hl if str(x).strip()][:5]
+                if analysis:
+                    model_tag = llm.get_model()
+        except Exception:
+            pass
+
+    if not analysis:
+        analysis = _stub_wind_analysis(direction, items, source_platform)
+        highlights = [
+            "在线截面反映近端岗位标题与能力表述",
+            "宜与离线词频对照，优先补齐双边高频技能",
+            f"数据来源：{source_platform}",
+        ]
+
     return {
         "show_m9": True,
-        "cards": cards,
         "title": "求职风向",
+        "analysis": analysis,
+        "highlights": highlights,
+        "source_platform": source_platform,
+        "online_count": len(items),
         "mode": online.get("mode") or "",
-        "note": online.get("note") or "在线浅采",
+        "model": model_tag,
     }
 
 

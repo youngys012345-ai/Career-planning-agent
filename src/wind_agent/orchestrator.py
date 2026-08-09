@@ -58,17 +58,31 @@ def _jd_context_items(direction: str, *, use_real: bool, online_items: list[dict
     return items[:8]
 
 
-def _annotate_salary_bars(salary_by_city: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
-    """为均数条形图计算相对宽度（左对齐，按均数比例延伸）。"""
+def _annotate_salary_bars(
+    salary_by_city: list[dict[str, Any]] | None,
+    *,
+    axis_max_k: float = 50.0,
+) -> list[dict[str, Any]]:
+    """薪资箱线图定位：固定 0～axis_max_k 轴；色块=P25～P75，竖线=均数。"""
     rows = list(salary_by_city or [])
     if not rows:
         return []
-    mx = max(float(r.get("mean_k") or 0) for r in rows) or 1.0
+    axis = axis_max_k if axis_max_k > 0 else 50.0
     out: list[dict[str, Any]] = []
     for r in rows:
         item = dict(r)
         mean = float(r.get("mean_k") or 0)
-        item["bar_pct"] = round(100.0 * mean / mx, 1)
+        p25 = float(r.get("p25") or max(mean * 0.85, 0))
+        p75 = float(r.get("p75") or mean * 1.15)
+        if p75 < p25:
+            p25, p75 = p75, p25
+        item["p25"] = round(p25, 2)
+        item["p75"] = round(p75, 2)
+        item["mean_k"] = round(mean, 2)
+        item["box_left_pct"] = round(max(0.0, min(100.0, p25 / axis * 100.0)), 2)
+        item["box_width_pct"] = round(max(1.0, min(100.0, (p75 - p25) / axis * 100.0)), 2)
+        item["mean_left_pct"] = round(max(0.0, min(100.0, mean / axis * 100.0)), 2)
+        item["axis_max_k"] = axis
         out.append(item)
     return out
 
@@ -193,7 +207,12 @@ def run_pipeline(
     pack.roles["duty_summaries"] = duties.get("duty_summaries") or []
     pack.generated["prep_plan"] = plan.get("stages") or []
 
-    latest = reg.call("build_latest_progress", online=pack.online)
+    latest = reg.call(
+        "build_latest_progress",
+        online=pack.online,
+        direction=pack.query_plan.direction,
+        user_query=pack.query_plan.user_query,
+    )
     pack.generated["latest"] = latest
     pack.flags["show_m9"] = bool(latest.get("show_m9"))
 
@@ -213,6 +232,7 @@ def run_pipeline(
         duties.get("model"),
         plan.get("model"),
         conclusions.get("model"),
+        latest.get("model"),
     }
     real_models = {m for m in models if m and m != "stub"}
     pack.generated["model_tag"] = (
@@ -232,14 +252,41 @@ def hitl_update_constraints(
     *,
     direction: str | None = None,
     cities: list[str] | None = None,
+    followup: str = "",
+    action: str = "",
     registry: ToolRegistry | None = None,
     **pipeline_kwargs: Any,
 ) -> tuple[EvidencePack, str]:
-    """M11：仅允许改方向/城市后局部重跑。"""
+    """人在回路：改方向/城市，或按追问/快捷动作局部重跑。"""
     new_direction = direction if direction is not None else pack.query_plan.direction
-    new_cities = cities if cities is not None else pack.query_plan.cities
+    new_cities = list(cities) if cities is not None else list(pack.query_plan.cities)
+    base_q = pack.query_plan.user_query or ""
+    notes: list[str] = []
+    act = (action or "").strip()
+    fu = (followup or "").strip()
+    if act == "reject_conclusion":
+        notes.append("用户驳回部分结论，请弱化或改写被质疑的风向表述，并更严格绑定证据。")
+    elif act == "exclude_jobs":
+        notes.append(fu or "请排除外包/销售性质等岗位后再解读市场能力要求。")
+        fu = ""
+    elif act == "add_city":
+        # 从追问中取城市，否则默认追加成都作对比
+        for cand in ("西安", "武汉", "成都", "南京", "苏州", "重庆", "天津"):
+            if cand in fu:
+                if cand not in new_cities:
+                    new_cities.append(cand)
+                break
+        else:
+            if "成都" not in new_cities:
+                new_cities.append("成都")
+        notes.append("用户要求增加对比城市，请在供给与薪资解读中纳入新增城市。")
+    if fu:
+        notes.append(fu)
+    user_text = base_q
+    if notes:
+        user_text = base_q + "\n\n【人在回路追问】" + "；".join(notes)
     return run_pipeline(
-        user_text=pack.query_plan.user_query or "",
+        user_text=user_text,
         direction=new_direction,
         cities=new_cities,
         registry=registry,
