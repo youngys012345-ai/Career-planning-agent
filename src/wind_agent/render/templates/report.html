@@ -129,11 +129,16 @@
 
   .stars { color: var(--sand); letter-spacing: 2px; font-size: 13px; white-space: nowrap; }
   .stars .off { color: #dfe6e3; }
-  .ctable { width: 100%; max-width: 520px; border-collapse: collapse; font-size: 13px; }
+  .ctable {
+    width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed;
+  }
   .ctable th {
     font-size: 12px; color: var(--ink3); font-weight: 600; text-align: left;
     padding: 8px 10px; border-bottom: 2px solid var(--line);
   }
+  .ctable th:nth-child(1), .ctable td:nth-child(1) { width: 22%; }
+  .ctable th:nth-child(2), .ctable td:nth-child(2) { width: 48%; }
+  .ctable th:nth-child(3), .ctable td:nth-child(3) { width: 30%; }
   .ctable td { padding: 10px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
   .ctable .cn { font-weight: 700; }
   .badge { font-size: 11px; border-radius: 999px; padding: 2px 9px; font-weight: 600; white-space: nowrap; }
@@ -224,7 +229,6 @@
   @media (max-width: 720px) {
     .road, .dir-row { grid-template-columns: 1fr; }
     .m-row { grid-template-columns: 1fr; }
-    .ctable { max-width: 100%; }
   }
 </style>
 </head>
@@ -400,17 +404,36 @@
     const cities = {{ pack.query_plan.cities|tojson }};
     const status = document.getElementById("hitlStatus");
     const input = document.getElementById("hitlFollowup");
+    const apiBase = (location.protocol === "http:" || location.protocol === "https:")
+      ? location.origin
+      : "";
+
+    function showErr(msg) {
+      status.textContent = msg;
+      status.className = "hitl-status err";
+    }
+
+    function detailText(detail) {
+      if (typeof detail === "string") return detail;
+      if (Array.isArray(detail)) {
+        return detail.map((d) => (d && d.msg) || JSON.stringify(d)).join("; ");
+      }
+      if (detail && typeof detail === "object") return JSON.stringify(detail);
+      return "重算失败";
+    }
 
     async function runHitl(action) {
       if (!reportId) {
-        status.textContent = "当前为静态报告预览，请从 Web 首页生成报告以启用重算。";
-        status.className = "hitl-status err";
+        showErr("当前为静态报告预览，请从 Web 首页生成报告后再用人在回路重算。");
+        return;
+      }
+      if (!apiBase) {
+        showErr("请通过服务地址打开报告（如 http://主机:8765/report/…），直接打开本地 HTML 无法调用接口。");
         return;
       }
       const followup = (input.value || "").trim();
       if (action === "regenerate" && !followup) {
-        status.textContent = "请先填写追问内容，或点选上方快捷动作。";
-        status.className = "hitl-status err";
+        showErr("请先填写追问内容，或点选上方快捷动作。");
         return;
       }
       if (action === "exclude_jobs" && !followup) {
@@ -425,7 +448,7 @@
       status.className = "hitl-status";
       status.textContent = "正在按人在回路反馈重算…";
       try {
-        const res = await fetch("/api/hitl", {
+        const res = await fetch(apiBase + "/api/hitl", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -436,12 +459,17 @@
             followup: (input.value || "").trim()
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || "重算失败");
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* 非 JSON 响应 */ }
+        if (!res.ok) throw new Error(detailText(data.detail) || ("HTTP " + res.status));
         window.location.href = data.html_url;
       } catch (err) {
-        status.textContent = err.message || "请求失败";
-        status.className = "hitl-status err";
+        const msg = String((err && err.message) || "");
+        if (/failed to fetch|networkerror|load failed/i.test(msg) || (err && err.name === "TypeError")) {
+          showErr("连不上重算接口：请确认已启动 python scripts/serve_wind_agent.py，并从首页生成后的 /report/… 打开本页（勿用 Live Server / 直接打开文件）。");
+          return;
+        }
+        showErr(msg || "请求失败");
       }
     }
 
