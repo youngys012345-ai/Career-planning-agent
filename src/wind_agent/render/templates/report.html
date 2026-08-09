@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>求职风向报告 · {{ pack.query_plan.direction }}</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap");
+  :root {
+    --ink: #0f1c1a; --ink2: #3d4f4b; --ink3: #7a8c87;
+    --sea: #0d6e6e; --sea-deep: #084848; --sand: #c4a35a;
+    --bg: #eef3f1; --card: #fff; --line: #d5e0dc;
+    --good: #1a7f5a; --warn: #b86e00; --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(ellipse 80% 50% at 10% -10%, #d4ebe6 0%, transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 0%, #f0e6c8 0%, transparent 45%),
+      var(--bg);
+    color: var(--ink); line-height: 1.65; padding: 20px 14px 100px;
+  }
+  .page { max-width: 920px; margin: 0 auto; }
+  .chip {
+    display: inline-block; border-radius: 999px; padding: 3px 10px;
+    font-weight: 600; font-size: 11px; margin-right: 6px;
+  }
+  .chip-mock { background: #e8eceb; color: var(--ink3); }
+  .chip-live { background: #d8efe9; color: var(--sea); }
+  .chip-model { background: rgba(196,163,90,.95); color: #1a1508; }
+
+  .hero {
+    background: linear-gradient(145deg, #084848 0%, #0d6e6e 55%, #1a8f7a 100%);
+    border-radius: var(--radius); color: #fff; padding: 26px 26px 22px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      -18deg, transparent, transparent 12px,
+      rgba(255,255,255,.03) 12px, rgba(255,255,255,.03) 13px
+    );
+  }
+  .hero > * { position: relative; }
+  .hero .eyebrow { font-size: 11px; letter-spacing: .12em; opacity: .8; }
+  .hero h1 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 24px; font-weight: 700; margin-top: 6px;
+  }
+  .hero .q {
+    margin-top: 12px; font-size: 13.5px;
+    background: rgba(0,0,0,.18); border-radius: 8px; padding: 10px 14px;
+    display: block; line-height: 1.55;
+  }
+  .hero .meta { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; }
+  .hero .meta span {
+    background: rgba(255,255,255,.14); border-radius: 999px; padding: 3px 10px;
+  }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px 22px; margin-top: 16px;
+  }
+  .card h2 {
+    font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    color: var(--ink); margin-bottom: 12px;
+  }
+  .card h2 .num {
+    width: 22px; height: 22px; border-radius: 6px; background: var(--sea); color: #fff;
+    font-size: 12px; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  }
+  .data-note { font-size: 10.5px; color: var(--ink3); margin-top: 8px; }
+  .note {
+    font-size: 11.5px; color: var(--ink3); background: #f5f9f7;
+    border-left: 3px solid var(--sea); padding: 7px 10px; border-radius: 0 6px 6px 0; margin-top: 12px;
+  }
+
+  .concl {
+    display: flex; gap: 12px; padding: 12px 14px; border: 1px solid var(--line);
+    border-radius: 10px; margin-top: 10px;
+  }
+  .concl .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sea); margin-top: 7px; flex: none; }
+  .concl b { color: var(--sea-deep); }
+  .concl .ev { font-size: 11.5px; color: var(--ink3); margin-top: 4px; }
+
+  .dir-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 12px;
+    padding: 14px 0; border-bottom: 1px dashed var(--line);
+  }
+  .dir-row:last-child { border-bottom: none; }
+  .dir-row .name { font-size: 14px; font-weight: 600; }
+  .dir-row .tag { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+  .dir-row .desc { font-size: 13px; color: var(--ink2); line-height: 1.7; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .split h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--sea-deep); }
+  .skill-line, .m-row {
+    display: grid; grid-template-columns: 1fr 72px; gap: 8px; align-items: center;
+    padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 13px;
+  }
+  .skill-line:last-child, .m-row:last-child { border-bottom: none; }
+  .bar { height: 7px; background: #e8eeec; border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, #3a9e8f, #0d6e6e); border-radius: 99px; }
+  .fbadge {
+    font-size: 11px; border-radius: 999px; padding: 2px 8px; font-weight: 600;
+    text-align: center; white-space: nowrap;
+  }
+  .f-high { background: #e6f6ef; color: var(--good); }
+  .f-mid { background: #eef6f5; color: var(--sea); }
+  .f-low { background: #fdf3e3; color: var(--warn); }
+
+  .stars { color: var(--sand); letter-spacing: 2px; font-size: 15px; }
+  .stars .off { color: #dfe6e3; }
+  .ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ctable th {
+    font-size: 12px; color: var(--ink3); font-weight: 600; text-align: left;
+    padding: 8px 10px; border-bottom: 2px solid var(--line);
+  }
+  .ctable td { padding: 10px; border-bottom: 1px dashed var(--line); }
+  .ctable .cn { font-weight: 700; }
+
+  .sal-row { margin-top: 14px; }
+  .sal-row .lab { font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .sal-row .lab .val { font-size: 12px; color: var(--ink2); font-weight: 400; }
+  .sal-chart {
+    margin-top: 6px; height: 14px; background: #e8eeec; border-radius: 99px; overflow: hidden;
+  }
+  .sal-bar {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, #7ec4b8, #0d6e6e);
+    min-width: 4px;
+  }
+  .hitl-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .hitl-btn {
+    border: 1px solid var(--sea); background: #fff; color: var(--sea-deep);
+    border-radius: 8px; padding: 8px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit;
+  }
+  .hitl-btn:hover { background: #e8f5f2; }
+  .hitl-btn.primary { background: var(--sea); color: #fff; }
+  .hitl-status { margin-top: 10px; font-size: 12.5px; color: var(--ink2); min-height: 1.2em; }
+  .hitl-status.err { color: #b33; }
+
+  .live { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .live .c {
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: #f8fbfa;
+  }
+  .live .k { font-size: 11px; color: var(--ink3); }
+  .live .v { font-size: 13px; font-weight: 600; margin-top: 4px; line-height: 1.5; }
+
+  .road { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stage {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+    background: #f9fcfb; display: flex; flex-direction: column;
+  }
+  .stage .t {
+    font-size: 12px; font-weight: 700; color: #fff; background: var(--sea);
+    border-radius: 999px; padding: 2px 10px; align-self: flex-start;
+  }
+  .stage .goal { font-size: 12.5px; color: var(--ink2); margin-top: 8px; font-weight: 600; }
+  .stage ul { margin-top: 8px; padding-left: 16px; font-size: 12.5px; color: var(--ink2); flex: 1; }
+  .stage li { margin-bottom: 8px; line-height: 1.55; }
+
+  @media (max-width: 720px) {
+    .split, .road, .live, .dir-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    {% if pack.flags.is_mock %}
+    <span class="chip chip-mock">量化含 mock</span>
+    {% else %}
+    <span class="chip chip-live">详情库真指标</span>
+    {% endif %}
+    {% if pack.generated.model_tag %}
+    <span class="chip chip-model">{{ pack.generated.model_tag }}</span>
+    {% endif %}
+    <div class="eyebrow" style="margin-top:10px">MARKET-FIRST · WILLINGNESS-DRIVEN</div>
+    <h1>求职风向报告 · {{ pack.query_plan.direction }}</h1>
+    {% if pack.query_plan.user_query %}
+    <div class="q">{{ pack.query_plan.user_query }}</div>
+    {% endif %}
+    <div class="meta">
+      <span>查询到的样本数：{{ pack.metrics.metrics_meta.job_count or '—' }}</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="num">1</span>核心结论（风向判断）</h2>
+    {% for c in pack.generated.conclusions or [] %}
+    <div class="concl">
+      <div class="dot"></div>
+      <div>
+        <b>{{ c.text }}</b>
+        <div class="ev">{{ c.evidence }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="card">
+    <h2><span class="num">2</span>细分岗位与职责概括</h2>
+    {% for d in pack.roles.duty_summaries or [] %}
+    <div class="dir-row">
+      <div>
+        <div class="name">{{ d.name }}</div>
+        <div class="tag">{{ d.tag or '词典子岗' }}</div>
+      </div>
+      <div>
+        <div class="desc">{{ d.summary }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div class="note">暂无细分岗位数据</div>
+    {% endfor %}
+  </section>
+
+  <section class="card">
+    <h2><span class="num">3</span>核心能力与专业要求</h2>
+    <div class="split">
+      <div>
+        <h3>核心能力（技能词频）</h3>
+        {% for s in pack.metrics.skills or [] %}
+        <div class="skill-line">
+          <div>
+            <div>{{ s.name }}</div>
+            <div class="bar"><i style="width:{{ ((s.score or 0.5) * 100)|int }}%"></i></div>
+          </div>
+          <span class="fbadge {% if s.tier == '高频' %}f-high{% elif '热' in (s.tier or '') %}f-high{% elif '低' in (s.tier or '') %}f-low{% else %}f-mid{% endif %}">{{ s.tier }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div>
+        <h3>专业出现频率</h3>
+        {% for m in pack.metrics.majors or [] %}
+        <div class="m-row">
+          <div>
+            <div>{{ m.name }}</div>
+            <div class="bar"><i style="width:{{ ((m.score or 0.5) * 100)|int }}%"></i></div>
+          </div>
+          <span class="fbadge {% if '热招' in (m.tier or '') or m.tier == '高频' %}f-high{% elif '低' in (m.tier or '') %}f-low{% else %}f-mid{% endif %}">{{ m.tier }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="data-note">* 来源：往届公司招聘信息 · 仅供参考</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">4</span>分城岗位供给</h2>
+    <table class="ctable">
+      <thead><tr><th>城市</th><th>相对供给（星级）</th></tr></thead>
+      <tbody>
+      {% for c in pack.metrics.city_supply_stars or [] %}
+        <tr>
+          <td class="cn">{{ c.city }}</td>
+          <td class="stars">
+            {% for i in range(1, 6) %}{% if i <= c.stars %}★{% else %}<span class="off">★</span>{% endif %}{% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  {% if pack.flags.show_m6 and pack.metrics.salary_by_city %}
+  <section class="card">
+    <h2><span class="num">5</span>预期薪资</h2>
+    {% for s in pack.metrics.salary_by_city[:8] %}
+    <div class="sal-row">
+      <div class="lab">
+        <span>{{ s.city }}</span>
+        <span class="val">均数 {{ s.mean_k }}k</span>
+      </div>
+      <div class="sal-chart">
+        <div class="sal-bar" style="width:{{ s.bar_pct or 0 }}%"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if pack.flags.show_m9 and pack.generated.latest and pack.generated.latest.show_m9 %}
+  <section class="card">
+    <h2><span class="num">6</span>求职风向</h2>
+    <div class="live">
+      {% for card in pack.generated.latest.cards or [] %}
+      <div class="c"><div class="k">{{ card.k }}</div><div class="v">{{ card.v }}</div></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <h2><span class="num">7</span>能力准备计划（初 / 中 / 高）</h2>
+    <div class="road">
+      {% for st in pack.generated.prep_plan or [] %}
+      <div class="stage">
+        <span class="t">{{ st.level }}</span>
+        <div class="goal">{{ st.goal }}</div>
+        <ul>
+          {% for it in st.action_items or [] %}<li>{{ it }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if pack.flags.show_m11 %}
+  <section class="card" id="hitl">
+    <h2><span class="num">8</span>人在回路</h2>
+    <p style="font-size:13px;color:var(--ink2);margin-bottom:4px">可改意愿方向或关注城市，报告将按新约束局部重算（板式不变）。</p>
+    <div class="hitl-row" id="hitlDirs">
+      <button type="button" class="hitl-btn" data-dir="数据分析">方向：数据分析</button>
+      <button type="button" class="hitl-btn" data-dir="产品经理">方向：产品经理</button>
+      <button type="button" class="hitl-btn" data-dir="后端开发">方向：后端开发</button>
+      <button type="button" class="hitl-btn" data-dir="算法">方向：算法</button>
+    </div>
+    <div class="hitl-row" id="hitlCities">
+      <button type="button" class="hitl-btn" data-city="上海">城市：上海</button>
+      <button type="button" class="hitl-btn" data-city="北京">城市：北京</button>
+      <button type="button" class="hitl-btn" data-city="杭州">城市：杭州</button>
+      <button type="button" class="hitl-btn" data-city="深圳">城市：深圳</button>
+      <button type="button" class="hitl-btn" data-city="成都">城市：成都</button>
+    </div>
+    <div class="hitl-row">
+      <button type="button" class="hitl-btn primary" id="hitlApply">按所选约束重算</button>
+    </div>
+    <div class="hitl-status" id="hitlStatus"></div>
+  </section>
+  <script>
+  (function () {
+    const reportId = {{ (report_id or '')|tojson }};
+    if (!reportId) {
+      document.getElementById("hitlStatus").textContent = "当前为静态报告预览，请从 Web 首页生成报告以启用重算。";
+      return;
+    }
+    let direction = {{ pack.query_plan.direction|tojson }};
+    let cities = {{ pack.query_plan.cities|tojson }};
+    const dirBtns = document.querySelectorAll("#hitlDirs .hitl-btn");
+    const cityBtns = document.querySelectorAll("#hitlCities .hitl-btn");
+    function mark(btns, attr, value) {
+      btns.forEach((b) => {
+        b.classList.toggle("primary", b.getAttribute(attr) === value);
+      });
+    }
+    mark(dirBtns, "data-dir", direction);
+    if (cities && cities.length === 1) mark(cityBtns, "data-city", cities[0]);
+    dirBtns.forEach((b) => b.addEventListener("click", () => {
+      direction = b.getAttribute("data-dir");
+      mark(dirBtns, "data-dir", direction);
+    }));
+    cityBtns.forEach((b) => b.addEventListener("click", () => {
+      cities = [b.getAttribute("data-city")];
+      mark(cityBtns, "data-city", cities[0]);
+    }));
+    document.getElementById("hitlApply").addEventListener("click", async () => {
+      const status = document.getElementById("hitlStatus");
+      status.className = "hitl-status";
+      status.textContent = "正在按新约束重算…";
+      try {
+        const res = await fetch("/api/hitl", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ report_id: reportId, direction, cities })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "重算失败");
+        window.location.href = data.html_url;
+      } catch (err) {
+        status.textContent = err.message || "请求失败";
+        status.className = "hitl-status err";
+      }
+    });
+  })();
+  </script>
+  {% endif %}
+
+</div>
+</body>
+</html>

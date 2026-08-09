@@ -1,0 +1,73 @@
+# ========== 默认忽略几乎全部，再白名单部署核心 ==========
+/*
+
+# 白名单：根文件
+!.gitignore
+!.env.example
+!README.md
+!requirements.txt
+!LICENSE
+!docs/
+!config/
+!scripts/
+!src/
+!tests/
+!data/
+
+# ========== 密钥与环境 ==========
+.env
+.env.*
+!.env.example
+*.pem
+credentials*.json
+.chrome-*-profile/
+.venv/
+venv/
+.venv-browser/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.vscode/
+.cursor/
+.claude/
+.agents/
+.DS_Store
+Thumbs.db
+_tmp_*
+*.log
+.cache/
+
+# ========== docs：仅部署说明 ==========
+docs/*
+!docs/DEPLOY.md
+
+# ========== config：仅 wind_agent ==========
+config/*
+!config/wind_agent/
+
+# ========== scripts：仅 Web / Demo ==========
+scripts/*
+!scripts/serve_wind_agent.py
+!scripts/run_wind_agent_demo.py
+
+# ========== src：仅 wind_agent ==========
+src/*
+!src/wind_agent/
+
+# ========== tests：仅 wind_agent ==========
+tests/*
+!tests/wind_agent/
+
+# ========== data：仅两份快照 ==========
+data/*
+!data/snapshot/
+data/snapshot/*
+!data/snapshot/campus985_v0/
+data/snapshot/campus985_v0/*
+!data/snapshot/campus985_v0/jobs.jsonl
+!data/snapshot/liepin_salary_v0/
+data/snapshot/liepin_salary_v0/*
+!data/snapshot/liepin_salary_v0/salaries.jsonl

@@ -1,0 +1,11 @@
+# 求职风向 Agent · 公网部署最小依赖
+jinja2>=3.1.0
+openai>=1.0.0
+python-dotenv>=1.0.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.0.0
+curl_cffi>=0.15.0
+
+# 本地开发测试（生产可省略）
+pytest>=8.0.0

@@ -1,0 +1,19 @@
+{
+  "skills": [
+    {"name": "SQL / 取数", "aliases": ["SQL", "sql", "Hive", "Presto", "Spark SQL", "取数"]},
+    {"name": "Python", "aliases": ["Python", "python", "pandas", "numpy"]},
+    {"name": "Excel / 表格", "aliases": ["Excel", "excel", "透视表", "VLOOKUP"]},
+    {"name": "BI / 可视化", "aliases": ["Tableau", "Power BI", "PowerBI", "FineBI", "可视化", "BI", "仪表盘"]},
+    {"name": "业务指标 / 分析方法", "aliases": ["指标", "异动分析", "专题分析", "A/B", "漏斗", "留存", "归因"]},
+    {"name": "机器学习 / 算法", "aliases": ["机器学习", "深度学习", "算法", "tensorflow", "pytorch", "模型"]},
+    {"name": "Hadoop / 大数据", "aliases": ["Hadoop", "Hive", "Spark", "Flink", "大数据"]},
+    {"name": "Java", "aliases": ["Java", "java", "Spring", "SpringBoot", "MyBatis"]},
+    {"name": "Go / Golang", "aliases": ["Golang", "Go语言", " go ", "微服务"]},
+    {"name": "Linux / 运维", "aliases": ["Linux", "Docker", "Kubernetes", "K8s", "CI/CD"]},
+    {"name": "MySQL / 数据库", "aliases": ["MySQL", "Redis", "MongoDB", "PostgreSQL", "数据库"]},
+    {"name": "产品需求 / 原型", "aliases": ["需求分析", "PRD", "原型", "Axure", "Figma", "用户故事"]},
+    {"name": "用户研究", "aliases": ["用户研究", "用户访谈", "可用性测试", "问卷"]},
+    {"name": "数据分析思维", "aliases": ["数据驱动", "数据敏感性", "数据分析", "数据挖掘"]},
+    {"name": "沟通协作", "aliases": ["跨部门", "团队协作", "沟通能力", "项目推进"]}
+  ]
+}
