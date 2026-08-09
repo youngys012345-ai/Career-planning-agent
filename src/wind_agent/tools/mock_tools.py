@@ -520,7 +520,11 @@ def build_latest_progress(
                 if analysis:
                     model_tag = llm.get_model()
         except Exception:
-            pass
+            # JSON 解析失败时，若模型仍返回了较长正文，直接用作分析
+            text = content.strip()
+            if len(text) >= 80 and "{" not in text[:20]:
+                analysis = text[:800]
+                model_tag = llm.get_model()
 
     if not analysis:
         analysis = _stub_wind_analysis(direction, items, source_platform)
