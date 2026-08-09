@@ -7,7 +7,6 @@
 !README.md
 !requirements.txt
 !LICENSE
-!docs/
 !config/
 !scripts/
 !src/
@@ -40,9 +39,8 @@ _tmp_*
 *.log
 .cache/
 
-# ========== docs：仅部署说明 ==========
-docs/*
-!docs/DEPLOY.md
+# ========== docs：全部本地保留，不上传 GitHub ==========
+docs/
 
 # ========== config：仅 wind_agent ==========
 config/*
