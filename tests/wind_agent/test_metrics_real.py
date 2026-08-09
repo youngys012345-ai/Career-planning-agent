@@ -77,7 +77,8 @@ def test_compute_skill_major_freq(jobs_fixture: Path, monkeypatch: pytest.Monkey
     assert result["job_count"] == 3
     skill_names = [s["name"] for s in result["skills"]]
     assert "SQL / 取数" in skill_names
-    assert any(s["tier"] == "高频" for s in result["skills"])
+    assert any(s["tier"] == "硬性门槛" for s in result["skills"])
+    assert all(s.get("blurb") for s in result["skills"])
     major_names = [m["name"] for m in result["majors"]]
     assert "统计学 / 应用数学" in major_names or "计算机 / 软件" in major_names
 
@@ -99,6 +100,11 @@ def test_compute_city_supply_stars(jobs_fixture: Path, monkeypatch: pytest.Monke
     ordered = [c["stars"] for c in result["cities"]]
     assert ordered == [5, 4, 3]
     assert len(result["cities"]) <= 6
+    top = result["cities"][0]
+    assert top["difficulty"] == "偏高"
+    assert top["difficulty_class"] == "b-hard"
+    # 3 城时末位为 3 星 → 中等；≥4 城时末位 1 星 → 较低
+    assert result["cities"][-1]["difficulty"] in ("中等", "较低")
 
 
 def test_gate_when_insufficient_jobs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

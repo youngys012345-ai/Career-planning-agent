@@ -12,11 +12,11 @@ from wind_agent.adapters import job_db
 
 _CONFIG_DIR = Path(__file__).resolve().parents[3] / "config" / "wind_agent"
 
-# 技能分档阈值（相对命中率）
+# 技能分档阈值（相对命中率 → 产品口径）
 _SKILL_TIERS = [
-    (0.55, "高频"),
-    (0.30, "中频"),
-    (0.0, "低频"),
+    (0.70, "硬性门槛"),
+    (0.35, "高频加分项"),
+    (0.0, "基础必备"),
 ]
 # 专业分档阈值
 _MAJOR_TIERS = [
@@ -31,6 +31,28 @@ _STAR_LABELS = {
     3: "中等",
     2: "相对较低",
     1: "样本内偏低",
+}
+
+# 技能简要说明（市场侧，非人岗匹配）
+_SKILL_BLURBS: dict[str, str] = {
+    "SQL / 取数": "取数与多表关联是日常分析的基本功；窗口函数与查询优化在面试手撕中常见。",
+    "Python": "常用于清洗、批量处理与简易可视化；与 SQL 搭配覆盖多数专题分析。",
+    "Excel / 表格": "透视表与常用函数是底线能力，单独不构成竞争力，但缺失会成短板。",
+    "BI / 可视化": "看板与报表是常见交付物；Tableau / 帆软 / Power BI 居其一即可。",
+    "业务指标 / 分析方法": "能拆解留存、转化、漏斗等指标，是「会取数」与「能分析」的分界。",
+    "机器学习 / 算法": "部分岗位加分；校招更常见于算法/数据科学方向，非所有分析岗刚需。",
+    "Hadoop / 大数据": "偏数仓与大数据链路；业务分析岗了解分层即可，开发岗要求更高。",
+    "Java": "偏工程实现；数据分析主路径非必须，转数据开发时更常见。",
+    "数据分析思维": "用数据定义问题、验证假设并给出可执行建议，JD 中高频出现。",
+    "沟通协作": "跨部门对齐口径与结论汇报，在业务分析类 JD 中经常作为软性要求。",
+    "MySQL / 数据库": "关系库基础与简单建模，支撑取数与口径对齐。",
+    "产品需求 / 原型": "偏产品岗；数据产品方向偶见，纯分析岗相对次要。",
+}
+
+_TIER_META = {
+    "硬性门槛": {"tag_class": "t-hard", "req": "任职要求高频出现"},
+    "高频加分项": {"tag_class": "t-plus", "req": "中大厂岗位更常要求"},
+    "基础必备": {"tag_class": "t-base", "req": "默认要求，极少单列"},
 }
 
 
@@ -89,12 +111,17 @@ def _count_lexicon_hits(text: str, entries: list[dict[str, Any]]) -> dict[str, i
     return counts
 
 
+def _skill_blurb(name: str) -> str:
+    return _SKILL_BLURBS.get(name) or f"在目标方向 JD 中出现，可作为准备侧重点之一（{name}）。"
+
+
 def _to_ranked_items(
     counts: dict[str, int],
     total: int,
     tiers: list[tuple[float, str]],
     *,
     top_n: int = 8,
+    with_skill_meta: bool = False,
 ) -> list[dict[str, Any]]:
     if total <= 0 or not counts:
         return []
@@ -104,15 +131,29 @@ def _to_ranked_items(
     for name, cnt in ranked[:top_n]:
         score = round(cnt / total, 4)
         rel = cnt / max_count if max_count else 0.0
-        items.append(
-            {
-                "name": name,
-                "tier": _tier(rel, tiers),
-                "score": score,
-                "count": cnt,
-            }
-        )
+        tier = _tier(rel, tiers)
+        item: dict[str, Any] = {
+            "name": name,
+            "tier": tier,
+            "score": score,
+            "count": cnt,
+        }
+        if with_skill_meta:
+            meta = _TIER_META.get(tier) or _TIER_META["基础必备"]
+            item["tag_class"] = meta["tag_class"]
+            item["req"] = meta["req"]
+            item["blurb"] = _skill_blurb(name)
+        items.append(item)
     return items
+
+
+def _difficulty_from_supply_stars(stars: int) -> tuple[str, str]:
+    """由岗位供给星级推算综合难度（供给越高 → 竞争越集中 → 难度偏高）。"""
+    if stars >= 4:
+        return "偏高", "b-hard"
+    if stars == 3:
+        return "中等", "b-mid"
+    return "较低", "b-easy"
 
 
 def _count_to_stars(counts: dict[str, int], *, top_n: int = 6) -> list[dict[str, Any]]:
@@ -125,12 +166,15 @@ def _count_to_stars(counts: dict[str, int], *, top_n: int = 6) -> list[dict[str,
     result: list[dict[str, Any]] = []
     for i, (city, cnt) in enumerate(sorted_items):
         stars = rank_stars[i] if i < len(rank_stars) else 1
+        diff_label, diff_class = _difficulty_from_supply_stars(stars)
         result.append(
             {
                 "city": city,
                 "stars": stars,
                 "label": _STAR_LABELS.get(stars, "中等"),
                 "count": cnt,
+                "difficulty": diff_label,
+                "difficulty_class": diff_class,
             }
         )
     return result
@@ -184,7 +228,9 @@ def compute_skill_major_freq(
 
     return {
         "direction": direction,
-        "skills": _to_ranked_items(skill_counts, total, _SKILL_TIERS),
+        "skills": _to_ranked_items(
+            skill_counts, total, _SKILL_TIERS, with_skill_meta=True
+        ),
         "majors": _to_ranked_items(major_counts, total, _MAJOR_TIERS, top_n=6),
         "job_count": total,
         "show_block": True,

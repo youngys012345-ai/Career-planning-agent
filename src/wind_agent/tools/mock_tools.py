@@ -110,10 +110,38 @@ def lookup_role_dictionary(direction: str) -> dict[str, Any]:
 def compute_skill_major_freq(direction: str) -> dict[str, Any]:
     return {
         "skills": [
-            {"name": "SQL / 取数", "tier": "高频", "score": 0.94},
-            {"name": "业务指标 / 分析方法", "tier": "高频", "score": 0.82},
-            {"name": "BI / 可视化", "tier": "高频", "score": 0.76},
-            {"name": "Python", "tier": "中频", "score": 0.58},
+            {
+                "name": "SQL / 取数",
+                "tier": "硬性门槛",
+                "tag_class": "t-hard",
+                "req": "任职要求高频出现",
+                "blurb": "取数与多表关联是日常分析的基本功；窗口函数与查询优化在面试手撕中常见。",
+                "score": 0.94,
+            },
+            {
+                "name": "业务指标 / 分析方法",
+                "tier": "硬性门槛",
+                "tag_class": "t-hard",
+                "req": "任职要求高频出现",
+                "blurb": "能拆解留存、转化、漏斗等指标，是「会取数」与「能分析」的分界。",
+                "score": 0.82,
+            },
+            {
+                "name": "BI / 可视化",
+                "tier": "高频加分项",
+                "tag_class": "t-plus",
+                "req": "中大厂岗位更常要求",
+                "blurb": "看板与报表是常见交付物；Tableau / 帆软 / Power BI 居其一即可。",
+                "score": 0.76,
+            },
+            {
+                "name": "Python",
+                "tier": "基础必备",
+                "tag_class": "t-base",
+                "req": "默认要求，极少单列",
+                "blurb": "常用于清洗、批量处理与简易可视化；与 SQL 搭配覆盖多数专题分析。",
+                "score": 0.58,
+            },
         ],
         "majors": [
             {"name": "统计学 / 应用数学", "tier": "热招", "score": 0.92},
@@ -128,12 +156,12 @@ def compute_city_supply_stars(direction: str) -> dict[str, Any]:
     return {
         "direction": direction,
         "cities": [
-            {"city": "上海", "stars": 5, "label": "样本内供给最高档"},
-            {"city": "北京", "stars": 4, "label": "相对高"},
-            {"city": "杭州", "stars": 3, "label": "中等偏上"},
-            {"city": "成都", "stars": 2, "label": "中等"},
-            {"city": "武汉", "stars": 1, "label": "相对较低"},
-            {"city": "西安", "stars": 1, "label": "相对较低"},
+            {"city": "上海", "stars": 5, "label": "样本内供给最高档", "difficulty": "偏高", "difficulty_class": "b-hard"},
+            {"city": "北京", "stars": 4, "label": "相对高", "difficulty": "偏高", "difficulty_class": "b-hard"},
+            {"city": "杭州", "stars": 3, "label": "中等偏上", "difficulty": "中等", "difficulty_class": "b-mid"},
+            {"city": "成都", "stars": 2, "label": "中等", "difficulty": "较低", "difficulty_class": "b-easy"},
+            {"city": "武汉", "stars": 1, "label": "相对较低", "difficulty": "较低", "difficulty_class": "b-easy"},
+            {"city": "西安", "stars": 1, "label": "相对较低", "difficulty": "较低", "difficulty_class": "b-easy"},
         ],
     }
 

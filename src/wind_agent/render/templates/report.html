@@ -93,14 +93,31 @@
   .dir-row .tag { font-size: 11px; color: var(--ink3); margin-top: 2px; }
   .dir-row .desc { font-size: 13px; color: var(--ink2); line-height: 1.7; }
 
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .split h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--sea-deep); }
-  .skill-line, .m-row {
-    display: grid; grid-template-columns: 1fr 72px; gap: 8px; align-items: center;
+  .sec-h3 { font-size: 13px; font-weight: 700; margin: 14px 0 8px; color: var(--sea-deep); }
+  .skill-row {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 0; border-bottom: 1px dashed var(--line);
+  }
+  .skill-row:last-child { border-bottom: none; }
+  .skill-tag {
+    flex: none; font-size: 12.5px; font-weight: 600; border-radius: 999px;
+    padding: 4px 12px; min-width: 118px; text-align: center;
+  }
+  .t-hard { background: #fdeaea; color: #b42318; }
+  .t-plus { background: #fdf3e3; color: var(--warn); }
+  .t-base { background: #eef0f5; color: var(--ink2); }
+  .skill-body { flex: 1; min-width: 0; }
+  .skill-body .sb-t { font-size: 13px; font-weight: 600; }
+  .skill-body .sb-t .req { font-size: 11px; color: var(--ink3); font-weight: 400; margin-left: 8px; }
+  .skill-body .sb-d { font-size: 12px; color: var(--ink2); margin-top: 3px; line-height: 1.55; }
+  .skill-legend { font-size: 11px; color: var(--ink3); margin-top: 12px; }
+
+  .m-row {
+    display: grid; grid-template-columns: 160px 1fr 88px; gap: 12px; align-items: center;
     padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 13px;
   }
-  .skill-line:last-child, .m-row:last-child { border-bottom: none; }
-  .bar { height: 7px; background: #e8eeec; border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .m-row:last-child { border-bottom: none; }
+  .bar { height: 7px; background: #e8eeec; border-radius: 99px; overflow: hidden; }
   .bar > i { display: block; height: 100%; background: linear-gradient(90deg, #3a9e8f, #0d6e6e); border-radius: 99px; }
   .fbadge {
     font-size: 11px; border-radius: 999px; padding: 2px 8px; font-weight: 600;
@@ -110,15 +127,19 @@
   .f-mid { background: #eef6f5; color: var(--sea); }
   .f-low { background: #fdf3e3; color: var(--warn); }
 
-  .stars { color: var(--sand); letter-spacing: 2px; font-size: 15px; }
+  .stars { color: var(--sand); letter-spacing: 2px; font-size: 13px; white-space: nowrap; }
   .stars .off { color: #dfe6e3; }
-  .ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ctable { width: 100%; max-width: 520px; border-collapse: collapse; font-size: 13px; }
   .ctable th {
     font-size: 12px; color: var(--ink3); font-weight: 600; text-align: left;
     padding: 8px 10px; border-bottom: 2px solid var(--line);
   }
-  .ctable td { padding: 10px; border-bottom: 1px dashed var(--line); }
+  .ctable td { padding: 10px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
   .ctable .cn { font-weight: 700; }
+  .badge { font-size: 11px; border-radius: 999px; padding: 2px 9px; font-weight: 600; white-space: nowrap; }
+  .b-easy { background: #e6f6ef; color: var(--good); }
+  .b-mid { background: #fdf3e3; color: var(--warn); }
+  .b-hard { background: #fdeaea; color: #b42318; }
 
   .sal-row { margin-top: 16px; }
   .sal-row .lab { font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
@@ -201,7 +222,9 @@
   .stage li { margin-bottom: 8px; line-height: 1.55; }
 
   @media (max-width: 720px) {
-    .split, .road, .dir-row { grid-template-columns: 1fr; }
+    .road, .dir-row { grid-template-columns: 1fr; }
+    .m-row { grid-template-columns: 1fr; }
+    .ctable { max-width: 100%; }
   }
 </style>
 </head>
@@ -259,39 +282,33 @@
 
   <section class="card">
     <h2><span class="num">3</span>核心能力与专业要求</h2>
-    <div class="split">
-      <div>
-        <h3>核心能力（技能词频）</h3>
-        {% for s in pack.metrics.skills or [] %}
-        <div class="skill-line">
-          <div>
-            <div>{{ s.name }}</div>
-            <div class="bar"><i style="width:{{ ((s.score or 0.5) * 100)|int }}%"></i></div>
-          </div>
-          <span class="fbadge {% if s.tier == '高频' %}f-high{% elif '热' in (s.tier or '') %}f-high{% elif '低' in (s.tier or '') %}f-low{% else %}f-mid{% endif %}">{{ s.tier }}</span>
-        </div>
-        {% endfor %}
-      </div>
-      <div>
-        <h3>专业出现频率</h3>
-        {% for m in pack.metrics.majors or [] %}
-        <div class="m-row">
-          <div>
-            <div>{{ m.name }}</div>
-            <div class="bar"><i style="width:{{ ((m.score or 0.5) * 100)|int }}%"></i></div>
-          </div>
-          <span class="fbadge {% if '热招' in (m.tier or '') or m.tier == '高频' %}f-high{% elif '低' in (m.tier or '') %}f-low{% else %}f-mid{% endif %}">{{ m.tier }}</span>
-        </div>
-        {% endfor %}
+    <h3 class="sec-h3">核心能力</h3>
+    {% for s in pack.metrics.skills or [] %}
+    <div class="skill-row">
+      <span class="skill-tag {{ s.tag_class or 't-base' }}">{{ s.name }}</span>
+      <div class="skill-body">
+        <div class="sb-t">{{ s.tier }}<span class="req">{{ s.req or '' }}</span></div>
+        <div class="sb-d">{{ s.blurb or '' }}</div>
       </div>
     </div>
+    {% endfor %}
+    <div class="skill-legend">红 = 硬性门槛｜橙 = 高频加分项｜灰 = 基础必备（分档来自 JD 词频相对高低）</div>
+
+    <h3 class="sec-h3">专业出现频率</h3>
+    {% for m in pack.metrics.majors or [] %}
+    <div class="m-row">
+      <div class="mname">{{ m.name }}</div>
+      <div class="bar"><i style="width:{{ ((m.score or 0.5) * 100)|int }}%"></i></div>
+      <span class="fbadge {% if '热招' in (m.tier or '') %}f-high{% elif '偶' in (m.tier or '') or '低' in (m.tier or '') %}f-low{% else %}f-mid{% endif %}">{{ m.tier }}</span>
+    </div>
+    {% endfor %}
     <div class="data-note">* 来源：往届公司招聘信息 · 仅供参考</div>
   </section>
 
   <section class="card">
     <h2><span class="num">4</span>分城岗位供给</h2>
     <table class="ctable">
-      <thead><tr><th>城市</th><th>相对供给（星级）</th></tr></thead>
+      <thead><tr><th>城市</th><th>岗位供给</th><th>综合难度</th></tr></thead>
       <tbody>
       {% for c in pack.metrics.city_supply_stars or [] %}
         <tr>
@@ -299,6 +316,7 @@
           <td class="stars">
             {% for i in range(1, 6) %}{% if i <= c.stars %}★{% else %}<span class="off">★</span>{% endif %}{% endfor %}
           </td>
+          <td><span class="badge {{ c.difficulty_class or 'b-mid' }}">{{ c.difficulty or '中等' }}</span></td>
         </tr>
       {% endfor %}
       </tbody>
