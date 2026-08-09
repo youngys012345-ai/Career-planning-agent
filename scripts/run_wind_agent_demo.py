@@ -20,7 +20,12 @@ def main() -> int:
     parser.add_argument("--direction", default="数据分析")
     parser.add_argument("--no-salary", action="store_true", help="模拟薪资库无数据")
     parser.add_argument("--no-online", action="store_true", help="模拟在线合格不足")
-    parser.add_argument("--show-hitl", action="store_true")
+    parser.add_argument(
+        "--show-hitl",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="报告中展示人在回路模块（默认开启）",
+    )
     parser.add_argument(
         "--real-metrics",
         action=argparse.BooleanOptionalAction,
@@ -47,6 +52,7 @@ def main() -> int:
         salary_enable=not args.no_salary,
         online_force_empty=args.no_online,
         show_m11=args.show_hitl,
+        report_id="localdemo01",
     )
 
     out = Path(args.out)
