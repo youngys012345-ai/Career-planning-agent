@@ -26,9 +26,9 @@ def main() -> int:
     import uvicorn
 
     print("求职风向 Agent Web Demo")
-    print("  本地：http://127.0.0.1:8765/")
+    print("  地址：http://127.0.0.1:8765/")
     print("  健康：http://127.0.0.1:8765/health")
-    print("  提示：公网体验需自行云主机或内网穿透；复制 .env.example → .env 配置 DASHSCOPE_API_KEY")
+    print("  提示：复制 .env.example → .env 后按需配置模型密钥")
     uvicorn.run(
         "wind_agent.webapp:app",
         host="0.0.0.0",

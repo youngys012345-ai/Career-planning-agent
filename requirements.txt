@@ -1,4 +1,4 @@
-# 求职风向 Agent · 公网部署最小依赖
+# 求职风向 Agent · Web Demo 依赖
 jinja2>=3.1.0
 openai>=1.0.0
 python-dotenv>=1.0.0
