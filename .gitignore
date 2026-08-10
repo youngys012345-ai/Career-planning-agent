@@ -12,9 +12,6 @@
 !tests/
 !data/
 
-# README 仅本地保留，不推送 GitHub
-# README.md
-
 # ========== 密钥与环境 ==========
 .env
 .env.*

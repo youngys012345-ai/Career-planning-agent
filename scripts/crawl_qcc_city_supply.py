@@ -68,17 +68,62 @@ def _load_salary_rows() -> list[dict[str, Any]]:
     return rows
 
 
+# 企查查招聘大数据检索词（按薪资库类目固化，避免别名里的品牌/过窄词）
+_QCC_SEARCH_KEYS: dict[str, str] = {
+    "cat_01": "管培生",
+    "cat_02": "软件开发工程师",
+    "cat_03": "算法工程师",
+    "cat_04": "前端开发",
+    "cat_05": "测试工程师",
+    "cat_06": "金融科技",
+    "cat_07": "银行柜员",
+    "cat_08": "客户经理",
+    "cat_09": "市场营销",
+    "cat_10": "产品经理",
+    "cat_11": "数据分析",
+    "cat_12": "云计算",
+    "cat_13": "硬件工程师",
+    "cat_14": "通信工程师",
+    "cat_15": "电气工程师",
+    "cat_16": "机械工程师",
+    "cat_17": "光学工程师",
+    "cat_18": "化工工程师",
+    "cat_19": "项目管理",
+    "cat_20": "人力资源",
+    "cat_21": "财务会计",
+    "cat_22": "法务",
+    "cat_23": "客户服务",
+    "cat_24": "运营支持",
+    "cat_25": "商业分析",
+    "cat_26": "临床医学",
+    "cat_27": "教师",
+    "cat_28": "供应链",
+    "cat_29": "智能制造",
+    "cat_30": "公共事务",
+    "cat_31": "知识产权",
+    "cat_32": "国际业务",
+    "cat_33": "UI设计",
+    "cat_34": "材料研发",
+    "cat_35": "食品研发",
+    "cat_36": "环境工程师",
+    "cat_37": "新媒体",
+    "cat_38": "游戏策划",
+}
+
+
 def pick_search_key(row: dict[str, Any]) -> str:
+    cid = str(row.get("category_id") or "").strip()
+    if cid in _QCC_SEARCH_KEYS:
+        return _QCC_SEARCH_KEYS[cid]
     aliases = [str(a).strip() for a in (row.get("aliases") or []) if str(a).strip()]
     name = str(row.get("category_name") or "").strip()
-    candidates = sorted(aliases, key=lambda s: (len(s), s)) if aliases else []
-    for c in candidates:
-        if 2 <= len(c) <= 12 and "与" not in c:
+    head = re.split(r"[与/、]", name)[0].strip()
+    if 2 <= len(head) <= 12:
+        return head
+    for c in aliases:
+        if 2 <= len(c) <= 12 and "与" not in c and not c.endswith("类"):
             return c
-    if candidates:
-        return candidates[0]
-    name = re.split(r"[与/、]", name)[0].strip()
-    return name or "招聘"
+    return (aliases[0] if aliases else "") or name or "招聘"
 
 
 def _city_list() -> list[str]:
@@ -90,12 +135,15 @@ def _city_list() -> list[str]:
 
 def normalize_cities(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
     cities = _city_list()
+    allowed = set(cities)
     merged: dict[str, int] = {}
     for item in raw:
-        name = normalize_city(str(item.get("city") or ""), cities) or str(
-            item.get("city") or ""
-        ).replace("市", "").strip()
+        name = normalize_city(str(item.get("city") or ""), cities)
         if not name:
+            # 仅接受城市别名表内的名称，避免页脚/列表噪声
+            bare = str(item.get("city") or "").replace("市", "").strip()
+            name = bare if bare in allowed else ""
+        if not name or (allowed and name not in allowed):
             continue
         try:
             cnt = int(item.get("job_count") or 0)
@@ -125,6 +173,27 @@ def _find_chrome() -> str:
     env = (os.getenv("CHROME_PATH") or "").strip()
     if env and Path(env).exists():
         return env
+    # Windows：优先本机 Google Chrome（登录态/风控更稳）
+    if sys.platform.startswith("win"):
+        for candidate in (
+            Path(os.environ.get("PROGRAMFILES", r"C:\Program Files"))
+            / "Google"
+            / "Chrome"
+            / "Application"
+            / "chrome.exe",
+            Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)"))
+            / "Google"
+            / "Chrome"
+            / "Application"
+            / "chrome.exe",
+            Path(os.environ.get("LOCALAPPDATA", ""))
+            / "Google"
+            / "Chrome"
+            / "Application"
+            / "chrome.exe",
+        ):
+            if candidate.is_file():
+                return str(candidate)
     # 优先 Playwright 完整 Chromium（比 snap 包装更适合 CDP）
     try:
         from playwright.sync_api import sync_playwright
@@ -196,8 +265,10 @@ macOS：
 
 
 def launch_chrome_cdp(port: int, profile_dir: Path) -> subprocess.Popen | None:
-    """启动带 CDP 的 Chromium（有界面），供手动登录。无 DISPLAY 时不启动，改为指引本机 Chrome。"""
-    if not os.environ.get("DISPLAY"):
+    """启动带 CDP 的 Chromium（有界面），供手动登录。无图形环境时不启动，改为指引本机 Chrome。"""
+    # Windows/macOS 桌面一般无 DISPLAY；Linux 无头服务器才需要 ssh 反代
+    has_gui = sys.platform.startswith(("win", "darwin")) or bool(os.environ.get("DISPLAY"))
+    if not has_gui:
         _print_local_chrome_help(port)
         return None
 
@@ -236,35 +307,117 @@ def wait_for_manual_login() -> None:
         time.sleep(120)
 
 
+def _cities_from_group_items(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """从 /api/bigsearch/recruit 的 GroupItems.city 抽取城市岗位数。"""
+    groups = payload.get("GroupItems") or payload.get("groupItems") or []
+    raw: list[dict[str, Any]] = []
+    for g in groups:
+        key = str(g.get("key") or g.get("Key") or "").lower()
+        if key != "city":
+            continue
+        for item in g.get("items") or g.get("Items") or []:
+            name = str(item.get("desc") or item.get("value") or "").strip()
+            try:
+                cnt = int(item.get("count") or 0)
+            except (TypeError, ValueError):
+                cnt = 0
+            if name and cnt > 0:
+                raw.append({"city": name, "job_count": cnt})
+        break
+    return normalize_cities(raw)
+
+
+async def _cities_from_echarts(page: Any) -> list[dict[str, Any]]:
+    """回退：从「招聘地区」ECharts 读百分比，再按总条数换算岗位数。"""
+    data = await page.evaluate(
+        """() => {
+          if (!window.echarts) return null;
+          let total = null;
+          const m = (document.body.innerText || '').match(/为您找到\\s*([\\d,]+)\\s*条/);
+          if (m) total = Number(m[1].replace(/,/g, ''));
+          for (const el of document.querySelectorAll('div')) {
+            const inst = echarts.getInstanceByDom(el);
+            if (!inst) continue;
+            const opt = inst.getOption() || {};
+            const x = ((opt.xAxis || [])[0] || {}).data || [];
+            const s = ((opt.series || [])[0] || {}).data || [];
+            if (x.length >= 5 && typeof x[0] === 'string'
+                && /北京|上海|深圳/.test(x.join(','))) {
+              return {
+                total,
+                rows: x.map((name, i) => ({city: name, value: Number(s[i])}))
+              };
+            }
+          }
+          return null;
+        }"""
+    )
+    if not data or not data.get("rows"):
+        return []
+    total = data.get("total")
+    raw: list[dict[str, Any]] = []
+    for row in data["rows"]:
+        val = float(row.get("value") or 0)
+        if total and 0 < val <= 100:
+            cnt = int(round(val / 100.0 * float(total)))
+        else:
+            cnt = int(round(val))
+        if cnt > 0:
+            raw.append({"city": str(row.get("city") or ""), "job_count": cnt})
+    return normalize_cities(raw)
+
+
 async def _extract_cities_from_page(page: Any, search_key: str) -> list[dict[str, Any]]:
     url = QCC_URL.format(key=quote(search_key))
-    await page.goto(url, wait_until="domcontentloaded", timeout=60000)
-    await page.wait_for_timeout(2500)
+    api_payload: dict[str, Any] = {}
+
+    async def _on_response(resp: Any) -> None:
+        if "/api/bigsearch/recruit" not in resp.url or resp.status != 200:
+            return
+        try:
+            api_payload["data"] = await resp.json()
+        except Exception:
+            pass
+
+    page.on("response", _on_response)
     try:
-        await page.wait_for_selector("text=地区", timeout=8000)
-    except Exception:
-        pass
-    text = await page.inner_text("body")
-    cities = normalize_cities(parse_city_rank_text(text))
-    if len(cities) < 3:
+        await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        # 等聚合接口 / 图表就绪
+        for _ in range(40):
+            if api_payload.get("data"):
+                break
+            await page.wait_for_timeout(250)
+        await page.wait_for_timeout(800)
+
+        cities: list[dict[str, Any]] = []
+        if api_payload.get("data"):
+            cities = _cities_from_group_items(api_payload["data"])
+        if len(cities) < 3:
+            cities = await _cities_from_echarts(page)
+        if len(cities) < 3:
+            # 末级回退：仅接受城市白名单，避免页脚/列表噪声
+            text = await page.inner_text("body")
+            allowed = set(_city_list())
+            cities = [
+                c
+                for c in normalize_cities(parse_city_rank_text(text))
+                if c.get("city") in allowed
+            ]
+        if len(cities) < 2:
+            DEBUG_DIR.mkdir(parents=True, exist_ok=True)
+            safe = re.sub(r"[^\w\u4e00-\u9fff-]+", "_", search_key)[:40]
+            (DEBUG_DIR / f"{safe}.html").write_text(await page.content(), encoding="utf-8")
+            try:
+                await page.screenshot(path=str(DEBUG_DIR / f"{safe}.png"), full_page=True)
+            except Exception:
+                pass
+            raise RuntimeError(f"未能解析地区岗位排行：{search_key}")
+        return cities
+    finally:
         try:
-            chunks = await page.eval_on_selector_all(
-                "div, li, tr, span",
-                """(nodes) => nodes.slice(0, 800).map(n => (n.innerText || '').trim()).filter(Boolean)""",
-            )
-            cities = normalize_cities(parse_city_rank_text("\n".join(chunks[:400])))
+            page.remove_listener("response", _on_response)
         except Exception:
             pass
-    if len(cities) < 2:
-        DEBUG_DIR.mkdir(parents=True, exist_ok=True)
-        safe = re.sub(r"[^\w\u4e00-\u9fff-]+", "_", search_key)[:40]
-        (DEBUG_DIR / f"{safe}.html").write_text(await page.content(), encoding="utf-8")
-        try:
-            await page.screenshot(path=str(DEBUG_DIR / f"{safe}.png"), full_page=True)
-        except Exception:
-            pass
-        raise RuntimeError(f"未能解析地区岗位排行：{search_key}")
-    return cities
 
 
 async def crawl_via_cdp(
