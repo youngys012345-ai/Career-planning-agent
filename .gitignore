@@ -4,7 +4,6 @@
 # 白名单：根文件
 !.gitignore
 !.env.example
-!README.md
 !requirements.txt
 !LICENSE
 !config/
@@ -12,6 +11,9 @@
 !src/
 !tests/
 !data/
+
+# README 仅本地保留，不推送 GitHub
+# README.md
 
 # ========== 密钥与环境 ==========
 .env
@@ -22,7 +24,9 @@ credentials*.json
 .chrome-*-profile/
 .venv/
 venv/
+.venv-crawl/
 .venv-browser/
+.cache/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -49,6 +53,9 @@ config/*
 # ========== scripts：仅 Web / Demo ==========
 scripts/*
 !scripts/serve_wind_agent.py
+!scripts/serve_dev.py
+!scripts/sync_to_public.sh
+!scripts/crawl_qcc_city_supply.py
 !scripts/run_wind_agent_demo.py
 
 # ========== src：仅 wind_agent ==========
@@ -69,3 +76,11 @@ data/snapshot/campus985_v0/*
 !data/snapshot/liepin_salary_v0/
 data/snapshot/liepin_salary_v0/*
 !data/snapshot/liepin_salary_v0/salaries.jsonl
+!data/snapshot/qcc_city_supply_v0/
+data/snapshot/qcc_city_supply_v0/*
+!data/snapshot/qcc_city_supply_v0/supplies.jsonl
+
+# 企查查登录态与爬虫调试产物（禁止入库）
+config/wind_agent/qcc_storage_state.json
+config/wind_agent/qcc_cookies*
+data/reports/web/qcc_debug/

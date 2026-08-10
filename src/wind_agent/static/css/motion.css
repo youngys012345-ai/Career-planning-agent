@@ -1,0 +1,316 @@
+/* 动效：首页入场 / 按钮 loading / 报告依次显现 / HITL 反馈
+   尊重 prefers-reduced-motion */
+
+@keyframes wind-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wind-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wind-soft-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes wind-btn-pulse {
+  0%, 100% { filter: brightness(1); box-shadow: 0 0 0 0 rgba(13, 110, 110, 0.35); }
+  50% { filter: brightness(1.06); box-shadow: 0 0 0 6px rgba(13, 110, 110, 0); }
+}
+
+@keyframes wind-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes wind-dot-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+
+@keyframes wind-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes wind-hitl-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(47, 111, 237, 0.15); }
+  50% { box-shadow: 0 0 0 6px rgba(47, 111, 237, 0); }
+}
+
+/* ---------- 首页：整卡 + 子元素交错入场 ---------- */
+.gate.motion-enter {
+  animation: wind-soft-scale 0.5s ease-out both;
+}
+
+.gate .motion-stagger {
+  opacity: 0;
+  animation: wind-fade-up 0.45s ease-out both;
+  animation-delay: calc(var(--stagger, 0) * 70ms + 80ms);
+}
+
+.gate.is-ready .motion-stagger {
+  /* 动画结束后保持可见；由 animation-fill-mode: both 处理 */
+}
+
+/* 方向 chip 交互 */
+.opt {
+  transition: transform 0.15s ease, background-color 0.18s ease, color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.opt:hover {
+  transform: translateY(-1px);
+}
+
+.opt:active {
+  transform: scale(0.96);
+}
+
+.opt.on {
+  box-shadow: 0 2px 8px rgba(13, 110, 110, 0.22);
+}
+
+/* ---------- 提交按钮 loading ---------- */
+#btn {
+  position: relative;
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+#btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+#btn.is-loading {
+  animation: wind-btn-pulse 1.25s ease-in-out infinite;
+  pointer-events: none;
+}
+
+#btn.is-loading .btn-label {
+  opacity: 0.92;
+}
+
+#btn .btn-spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: -2px;
+  animation: wind-spin 0.7s linear infinite;
+}
+
+#btn.is-loading .btn-spinner {
+  display: inline-block;
+}
+
+/* 状态行：阶段点 + 淡入 */
+#status {
+  transition: opacity 0.2s ease;
+}
+
+#status.has-text {
+  animation: wind-fade-in 0.28s ease-out both;
+}
+
+#status .stage-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 6px;
+  vertical-align: 2px;
+}
+
+#status .stage-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sea);
+  display: block;
+  animation: wind-dot-pulse 1s ease-in-out infinite;
+}
+
+#status .stage-dots i:nth-child(2) { animation-delay: 0.15s; }
+#status .stage-dots i:nth-child(3) { animation-delay: 0.3s; }
+
+#status.err {
+  animation: wind-shake 0.4s ease-out both;
+}
+
+/* ---------- 报告：hero ---------- */
+.hero.motion-enter {
+  animation: wind-fade-up 0.5s ease-out both;
+}
+
+.hero .motion-stagger {
+  opacity: 0;
+  animation: wind-fade-up 0.4s ease-out both;
+  animation-delay: calc(var(--stagger, 0) * 60ms + 120ms);
+}
+
+/* ---------- 报告：模块依次显现 ---------- */
+.card.motion-reveal,
+.hitl.motion-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.card.motion-reveal.is-visible,
+.hitl.motion-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 模块内结论行轻量跟随 */
+.card.motion-reveal.is-visible .concl {
+  animation: wind-fade-up 0.35s ease-out both;
+}
+
+.card.motion-reveal.is-visible .concl:nth-child(2) { animation-delay: 0.05s; }
+.card.motion-reveal.is-visible .concl:nth-child(3) { animation-delay: 0.1s; }
+.card.motion-reveal.is-visible .concl:nth-child(4) { animation-delay: 0.15s; }
+
+/* 进度条宽度过渡 */
+.bar > i {
+  transition: width 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- HITL 反馈 ---------- */
+.hitl {
+  transition: box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+}
+
+.hitl.is-busy {
+  animation: wind-hitl-glow 1.4s ease-in-out infinite;
+}
+
+.hitl.is-busy .hitl-btn,
+.hitl.is-busy .ask-box button,
+.hitl.is-busy .ask-box input {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.hitl-btn {
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.hitl-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.hitl-btn.is-active-action {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #8aa4c4;
+}
+
+.hitl-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s ease;
+}
+
+.hitl-status.has-text {
+  animation: wind-fade-in 0.28s ease-out both;
+}
+
+.hitl-status.err.has-text {
+  animation: wind-shake 0.4s ease-out both;
+}
+
+.hitl-status .hitl-spinner {
+  display: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(154, 171, 189, 0.35);
+  border-top-color: #d7e2ee;
+  border-radius: 50%;
+  flex: none;
+  animation: wind-spin 0.7s linear infinite;
+}
+
+.hitl-status.is-loading .hitl-spinner {
+  display: inline-block;
+}
+
+.ask-box input:focus {
+  outline: none;
+  border-color: #5b7fad;
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.18);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate.motion-enter,
+  .hero.motion-enter,
+  .gate .motion-stagger,
+  .hero .motion-stagger,
+  #status.has-text,
+  #status.err,
+  .hitl-status.has-text,
+  .hitl-status.err.has-text,
+  #btn.is-loading,
+  .hitl.is-busy,
+  .card.motion-reveal.is-visible .concl {
+    animation: none !important;
+  }
+
+  .gate .motion-stagger,
+  .hero .motion-stagger {
+    opacity: 1;
+  }
+
+  .opt,
+  #btn,
+  .hitl-btn,
+  .ask-box input {
+    transition: none;
+  }
+
+  .opt:hover,
+  .opt:active,
+  #btn:hover:not(:disabled),
+  .hitl-btn:active:not(:disabled) {
+    transform: none;
+  }
+
+  .card.motion-reveal,
+  .hitl.motion-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .bar > i {
+    transition: none;
+  }
+
+  #btn .btn-spinner,
+  .hitl-status .hitl-spinner,
+  #status .stage-dots {
+    display: none !important;
+  }
+}

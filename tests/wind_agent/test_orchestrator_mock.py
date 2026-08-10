@@ -26,15 +26,24 @@ def test_mock_pipeline_shows_salary_and_latest():
     assert "预期薪资" in html
     assert "求职风向" in html
     assert "这份报告哪里不对" in html
-    assert "均数" in html
+    assert "平均" in html
     assert "sal-box" in html
+    assert "P25" not in html
+    assert "P75" not in html
+    assert "大中小型公司" in html
+    assert "40k" in html  # 横轴等距刻度含 40k，与线性定位一致
     assert "在线可见公司" not in html
     assert "岗位标题簇" not in html
     assert "最新进展" not in html
     assert "就业难度" not in html
     assert "Evidence Pack" not in html
-    # 箱线图定位在 0～50k 轴上
+    # 箱线图定位在 0～50k 线性轴上（例：11.5k → 23%）
     assert any((c.get("box_width_pct") or 0) > 0 for c in pack.metrics["salary_by_city"])
+    for c in pack.metrics["salary_by_city"]:
+        mean = float(c.get("mean_k") or 0)
+        axis = float(c.get("axis_max_k") or 50)
+        expected = round(max(0.0, min(100.0, mean / axis * 100.0)), 2)
+        assert c.get("mean_left_pct") == expected
     assert pack.generated["latest"].get("analysis")
     assert pack.generated["latest"].get("source_platform")
 

@@ -1,0 +1,122 @@
+/* 首页布局（风格与原先内联样式一致） */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, #d4ebe6 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, #f0e6c8 0%, transparent 45%),
+    var(--bg);
+  color: var(--ink);
+  line-height: 1.65;
+  padding: 24px 16px 48px;
+}
+
+.wrap { max-width: 640px; margin: 0 auto; }
+
+.gate {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 22px 24px;
+}
+
+.brand {
+  font-family: "Noto Serif SC", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--sea-deep);
+  letter-spacing: .04em;
+}
+
+.tagline {
+  font-size: 13px;
+  color: var(--ink2);
+  margin-top: 6px;
+  max-width: 36em;
+}
+
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--sand);
+  color: #1a1508;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 14px;
+}
+
+input, textarea {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #f4faf8;
+}
+
+textarea { min-height: 72px; resize: vertical; }
+
+.opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.opt {
+  border: 1px solid var(--sea);
+  background: #fff;
+  color: var(--sea-deep);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.opt.on {
+  background: var(--sea);
+  color: #fff;
+}
+
+button {
+  margin-top: 18px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #084848, #0d6e6e);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+#status {
+  margin-top: 12px;
+  font-size: 13px;
+  min-height: 1.2em;
+}
+
+.err { color: #b33; }

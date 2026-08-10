@@ -4,238 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>求职风向报告 · {{ pack.query_plan.direction }}</title>
-<style>
-  @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap");
-  :root {
-    --ink: #0f1c1a; --ink2: #3d4f4b; --ink3: #7a8c87;
-    --sea: #0d6e6e; --sea-deep: #084848; --sand: #c4a35a;
-    --bg: #eef3f1; --card: #fff; --line: #d5e0dc;
-    --good: #1a7f5a; --warn: #b86e00; --radius: 12px;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-    background:
-      radial-gradient(ellipse 80% 50% at 10% -10%, #d4ebe6 0%, transparent 55%),
-      radial-gradient(ellipse 60% 40% at 100% 0%, #f0e6c8 0%, transparent 45%),
-      var(--bg);
-    color: var(--ink); line-height: 1.65; padding: 20px 14px 100px;
-  }
-  .page { max-width: 920px; margin: 0 auto; }
-  .chip {
-    display: inline-block; border-radius: 999px; padding: 3px 10px;
-    font-weight: 600; font-size: 11px; margin-right: 6px;
-  }
-  .chip-mock { background: #e8eceb; color: var(--ink3); }
-  .chip-live { background: #d8efe9; color: var(--sea); }
-  .chip-model { background: rgba(196,163,90,.95); color: #1a1508; }
-
-  .hero {
-    background: linear-gradient(145deg, #084848 0%, #0d6e6e 55%, #1a8f7a 100%);
-    border-radius: var(--radius); color: #fff; padding: 26px 26px 22px;
-    position: relative; overflow: hidden;
-  }
-  .hero::before {
-    content: ""; position: absolute; inset: 0;
-    background: repeating-linear-gradient(
-      -18deg, transparent, transparent 12px,
-      rgba(255,255,255,.03) 12px, rgba(255,255,255,.03) 13px
-    );
-  }
-  .hero > * { position: relative; }
-  .hero .eyebrow { font-size: 11px; letter-spacing: .12em; opacity: .8; }
-  .hero h1 {
-    font-family: "Noto Serif SC", serif;
-    font-size: 24px; font-weight: 700; margin-top: 6px;
-  }
-  .hero .q {
-    margin-top: 12px; font-size: 13.5px;
-    background: rgba(0,0,0,.18); border-radius: 8px; padding: 10px 14px;
-    display: block; line-height: 1.55;
-  }
-  .hero .meta { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; }
-  .hero .meta span {
-    background: rgba(255,255,255,.14); border-radius: 999px; padding: 3px 10px;
-  }
-
-  .card {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 20px 22px; margin-top: 16px;
-  }
-  .card h2 {
-    font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;
-    color: var(--ink); margin-bottom: 12px;
-  }
-  .card h2 .num {
-    width: 22px; height: 22px; border-radius: 6px; background: var(--sea); color: #fff;
-    font-size: 12px; display: inline-flex; align-items: center; justify-content: center; flex: none;
-  }
-  .data-note { font-size: 10.5px; color: var(--ink3); margin-top: 8px; }
-  .note {
-    font-size: 11.5px; color: var(--ink3); background: #f5f9f7;
-    border-left: 3px solid var(--sea); padding: 7px 10px; border-radius: 0 6px 6px 0; margin-top: 12px;
-  }
-
-  .concl {
-    display: flex; gap: 12px; padding: 12px 14px; border: 1px solid var(--line);
-    border-radius: 10px; margin-top: 10px;
-  }
-  .concl .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sea); margin-top: 7px; flex: none; }
-  .concl b { color: var(--sea-deep); }
-  .concl .ev { font-size: 11.5px; color: var(--ink3); margin-top: 4px; }
-
-  .dir-row {
-    display: grid; grid-template-columns: 140px 1fr; gap: 12px;
-    padding: 14px 0; border-bottom: 1px dashed var(--line);
-  }
-  .dir-row:last-child { border-bottom: none; }
-  .dir-row .name { font-size: 14px; font-weight: 600; }
-  .dir-row .tag { font-size: 11px; color: var(--ink3); margin-top: 2px; }
-  .dir-row .desc { font-size: 13px; color: var(--ink2); line-height: 1.7; }
-
-  .sec-h3 { font-size: 13px; font-weight: 700; margin: 14px 0 8px; color: var(--sea-deep); }
-  .skill-row {
-    display: flex; gap: 12px; align-items: flex-start;
-    padding: 12px 0; border-bottom: 1px dashed var(--line);
-  }
-  .skill-row:last-child { border-bottom: none; }
-  .skill-tag {
-    flex: none; font-size: 12.5px; font-weight: 600; border-radius: 999px;
-    padding: 4px 12px; min-width: 118px; text-align: center;
-  }
-  .t-hard { background: #fdeaea; color: #b42318; }
-  .t-plus { background: #fdf3e3; color: var(--warn); }
-  .t-base { background: #eef0f5; color: var(--ink2); }
-  .skill-body { flex: 1; min-width: 0; }
-  .skill-body .sb-t { font-size: 13px; font-weight: 600; }
-  .skill-body .sb-t .req { font-size: 11px; color: var(--ink3); font-weight: 400; margin-left: 8px; }
-  .skill-body .sb-d { font-size: 12px; color: var(--ink2); margin-top: 3px; line-height: 1.55; }
-  .skill-legend { font-size: 11px; color: var(--ink3); margin-top: 12px; }
-
-  .m-row {
-    display: grid; grid-template-columns: 160px 1fr 88px; gap: 12px; align-items: center;
-    padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: 13px;
-  }
-  .m-row:last-child { border-bottom: none; }
-  .bar { height: 7px; background: #e8eeec; border-radius: 99px; overflow: hidden; }
-  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, #3a9e8f, #0d6e6e); border-radius: 99px; }
-  .fbadge {
-    font-size: 11px; border-radius: 999px; padding: 2px 8px; font-weight: 600;
-    text-align: center; white-space: nowrap;
-  }
-  .f-high { background: #e6f6ef; color: var(--good); }
-  .f-mid { background: #eef6f5; color: var(--sea); }
-  .f-low { background: #fdf3e3; color: var(--warn); }
-
-  .stars { color: var(--sand); letter-spacing: 2px; font-size: 13px; white-space: nowrap; }
-  .stars .off { color: #dfe6e3; }
-  .ctable {
-    width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed;
-  }
-  .ctable th {
-    font-size: 12px; color: var(--ink3); font-weight: 600; text-align: left;
-    padding: 8px 10px; border-bottom: 2px solid var(--line);
-  }
-  .ctable th:nth-child(1), .ctable td:nth-child(1) { width: 22%; }
-  .ctable th:nth-child(2), .ctable td:nth-child(2) { width: 48%; }
-  .ctable th:nth-child(3), .ctable td:nth-child(3) { width: 30%; }
-  .ctable td { padding: 10px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
-  .ctable .cn { font-weight: 700; }
-  .badge { font-size: 11px; border-radius: 999px; padding: 2px 9px; font-weight: 600; white-space: nowrap; }
-  .b-easy { background: #e6f6ef; color: var(--good); }
-  .b-mid { background: #fdf3e3; color: var(--warn); }
-  .b-hard { background: #fdeaea; color: #b42318; }
-
-  .sal-row { margin-top: 16px; }
-  .sal-row .lab { font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-  .sal-row .lab .val { font-size: 12px; color: var(--ink2); font-weight: 400; }
-  .sal-chart {
-    position: relative; margin-top: 8px; height: 28px;
-    background: linear-gradient(90deg, #eef2f1 0%, #e8eeec 100%);
-    border-radius: 8px; border: 1px solid #dde6e2;
-  }
-  .sal-box {
-    position: absolute; top: 6px; height: 16px; border-radius: 6px;
-    background: linear-gradient(90deg, #7ec4b8, #0d6e6e);
-    opacity: .92;
-  }
-  .sal-mean {
-    position: absolute; top: 3px; width: 3px; height: 22px;
-    background: #0f1c1a; border-radius: 2px;
-  }
-  .sal-axis {
-    display: flex; justify-content: space-between; margin-top: 4px;
-    font-size: 10.5px; color: var(--ink3);
-  }
-  .sal-legend { font-size: 11.5px; color: var(--ink3); margin: 0 0 4px; }
-
-  .wind-body { font-size: 13.5px; color: var(--ink2); line-height: 1.75; }
-  .wind-hl { margin: 12px 0 0; padding-left: 18px; color: var(--ink2); font-size: 13px; }
-  .wind-hl li { margin-bottom: 6px; }
-  .wind-src {
-    margin-top: 12px; font-size: 12px; color: var(--ink3);
-    display: flex; flex-wrap: wrap; gap: 8px;
-  }
-  .wind-src span {
-    background: #f0f5f3; border-radius: 999px; padding: 3px 10px; font-weight: 600;
-  }
-
-  .hitl {
-    margin-top: 16px; border-radius: var(--radius); padding: 20px 22px;
-    background: linear-gradient(145deg, #1a2332 0%, #243044 100%);
-    color: #e8eef5;
-  }
-  .hitl h2 {
-    font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 6px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .hitl .sub { font-size: 12px; color: #9aabbd; margin: 0 0 14px; line-height: 1.55; }
-  .hitl-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .hitl-btn {
-    border: 1px solid #4a5d73; background: transparent; color: #d7e2ee;
-    border-radius: 8px; padding: 8px 12px; font-size: 12.5px; cursor: pointer; font-family: inherit;
-  }
-  .hitl-btn:hover { background: rgba(255,255,255,.06); }
-  .hitl-btn.danger { border-color: #c45c5c; color: #ffb4b4; }
-  .hitl-btn.primary { background: #fff; color: #1a2332; border-color: #fff; font-weight: 600; }
-  .ask-box {
-    margin-top: 14px; display: flex; gap: 8px; align-items: stretch;
-  }
-  .ask-box input {
-    flex: 1; border: 1px solid #3d4f63; background: #121a26; color: #e8eef5;
-    border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: inherit;
-  }
-  .ask-box input::placeholder { color: #7a8c9e; }
-  .ask-box button {
-    border: none; background: #2f6fed; color: #fff; border-radius: 8px;
-    padding: 0 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
-  }
-  .hitl-status { margin-top: 10px; font-size: 12.5px; color: #9aabbd; min-height: 1.2em; }
-  .hitl-status.err { color: #ffb4b4; }
-
-  .road { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .stage {
-    border: 1px solid var(--line); border-radius: 10px; padding: 14px;
-    background: #f9fcfb; display: flex; flex-direction: column;
-  }
-  .stage .t {
-    font-size: 12px; font-weight: 700; color: #fff; background: var(--sea);
-    border-radius: 999px; padding: 2px 10px; align-self: flex-start;
-  }
-  .stage .goal { font-size: 12.5px; color: var(--ink2); margin-top: 8px; font-weight: 600; }
-  .stage ul { margin-top: 8px; padding-left: 16px; font-size: 12.5px; color: var(--ink2); flex: 1; }
-  .stage li { margin-bottom: 8px; line-height: 1.55; }
-
-  @media (max-width: 720px) {
-    .road, .dir-row { grid-template-columns: 1fr; }
-    .m-row { grid-template-columns: 1fr; }
-  }
-</style>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/report.css">
+<link rel="stylesheet" href="/static/css/motion.css">
 </head>
 <body>
 <div class="page">
 
-  <header class="hero">
+  <header class="hero motion-enter">
+    <div class="motion-stagger">
     {% if pack.flags.is_mock %}
     <span class="chip chip-mock">量化含 mock</span>
     {% else %}
@@ -244,17 +21,18 @@
     {% if pack.generated.model_tag %}
     <span class="chip chip-model">{{ pack.generated.model_tag }}</span>
     {% endif %}
-    <div class="eyebrow" style="margin-top:10px">MARKET-FIRST · WILLINGNESS-DRIVEN</div>
-    <h1>求职风向报告 · {{ pack.query_plan.direction }}</h1>
+    </div>
+    <div class="eyebrow motion-stagger" style="margin-top:10px">MARKET-FIRST · WILLINGNESS-DRIVEN</div>
+    <h1 class="motion-stagger">求职风向报告 · {{ pack.query_plan.direction }}</h1>
     {% if pack.query_plan.user_query %}
-    <div class="q">{{ pack.query_plan.user_query }}</div>
+    <div class="q motion-stagger">{{ pack.query_plan.user_query }}</div>
     {% endif %}
-    <div class="meta">
+    <div class="meta motion-stagger">
       <span>查询到的样本数：{{ pack.metrics.metrics_meta.job_count or '—' }}</span>
     </div>
   </header>
 
-  <section class="card">
+  <section class="card motion-reveal">
     <h2><span class="num">1</span>核心结论（风向判断）</h2>
     {% for c in pack.generated.conclusions or [] %}
     <div class="concl">
@@ -267,7 +45,7 @@
     {% endfor %}
   </section>
 
-  <section class="card">
+  <section class="card motion-reveal">
     <h2><span class="num">2</span>细分岗位与职责概括</h2>
     {% for d in pack.roles.duty_summaries or [] %}
     <div class="dir-row">
@@ -284,7 +62,7 @@
     {% endfor %}
   </section>
 
-  <section class="card">
+  <section class="card motion-reveal">
     <h2><span class="num">3</span>核心能力与专业要求</h2>
     <h3 class="sec-h3">核心能力</h3>
     {% for s in pack.metrics.skills or [] %}
@@ -302,14 +80,14 @@
     {% for m in pack.metrics.majors or [] %}
     <div class="m-row">
       <div class="mname">{{ m.name }}</div>
-      <div class="bar"><i style="width:{{ ((m.score or 0.5) * 100)|int }}%"></i></div>
+      <div class="bar"><i style="width:{{ ((m.bar_score or m.score or 0.5) * 100)|int }}%"></i></div>
       <span class="fbadge {% if '热招' in (m.tier or '') %}f-high{% elif '偶' in (m.tier or '') or '低' in (m.tier or '') %}f-low{% else %}f-mid{% endif %}">{{ m.tier }}</span>
     </div>
     {% endfor %}
     <div class="data-note">* 来源：往届公司招聘信息 · 仅供参考</div>
   </section>
 
-  <section class="card">
+  <section class="card motion-reveal">
     <h2><span class="num">4</span>分城岗位供给</h2>
     <table class="ctable">
       <thead><tr><th>城市</th><th>岗位供给</th><th>综合难度</th></tr></thead>
@@ -325,31 +103,39 @@
       {% endfor %}
       </tbody>
     </table>
+    {% set supply_src = (pack.metrics.metrics_meta.city_supply_source if pack.metrics.metrics_meta is defined else none) or '' %}
+    {% if '企查查' in supply_src %}
+    <div class="data-note">* 岗位供给来自企查查招聘地区排行快照（非校园就业网）；综合难度与供给呈反比。</div>
+    {% elif supply_src %}
+    <div class="data-note">* 岗位供给暂用来自校园就业网详情库的分城统计（企查查快照未命中）；综合难度与供给呈反比。</div>
+    {% else %}
+    <div class="data-note">* 综合难度与岗位供给呈反比，仅供参考。</div>
+    {% endif %}
   </section>
 
   {% if pack.flags.show_m6 and pack.metrics.salary_by_city %}
-  <section class="card">
+  <section class="card motion-reveal">
     <h2><span class="num">5</span>预期薪资范围（月薪 · 应届档）</h2>
-    <p class="sal-legend">色块 = P25～P75 区间，竖线 = 均数；横轴统一 0～50k</p>
+    <p class="sal-legend">色块 = 多数人落在的月薪区间（偏低侧～偏高侧）；黑色竖线 = 平均月薪。横轴按 0～50k 均匀刻度。</p>
     {% for s in pack.metrics.salary_by_city[:8] %}
     <div class="sal-row">
       <div class="lab">
         <span>{{ s.city }} · {{ pack.query_plan.direction }}</span>
-        <span class="val">P25 {{ s.p25 }}k · 均数 {{ s.mean_k }}k · P75 {{ s.p75 }}k</span>
+        <span class="val">偏低约 {{ s.p25 }}k · 平均 {{ s.mean_k }}k · 偏高约 {{ s.p75 }}k</span>
       </div>
       <div class="sal-chart">
         <div class="sal-box" style="left:{{ s.box_left_pct or 0 }}%;width:{{ s.box_width_pct or 1 }}%"></div>
-        <div class="sal-mean" style="left:{{ s.mean_left_pct or 0 }}%"></div>
+        <div class="sal-mean" style="left:{{ s.mean_left_pct or 0 }}%" title="平均 {{ s.mean_k }}k"></div>
       </div>
-      <div class="sal-axis"><span>0</span><span>10k</span><span>20k</span><span>30k</span><span>50k</span></div>
+      <div class="sal-axis"><span>0</span><span>10k</span><span>20k</span><span>30k</span><span>40k</span><span>50k</span></div>
     </div>
     {% endfor %}
-    <div class="data-note">* 以上分位与均数根据薪资库应届/1年以下档统计，仅供参考</div>
+    <div class="data-note">* 根据薪资库应届 / 1 年以下档统计，仅供参考；数据包含各类大中小型公司。</div>
   </section>
   {% endif %}
 
   {% if pack.flags.show_m9 and pack.generated.latest and pack.generated.latest.show_m9 %}
-  <section class="card">
+  <section class="card motion-reveal">
     <h2><span class="num">6</span>求职风向</h2>
     <div class="wind-body">{{ pack.generated.latest.analysis }}</div>
     {% if pack.generated.latest.highlights %}
@@ -366,7 +152,7 @@
   </section>
   {% endif %}
 
-  <section class="card">
+  <section class="card motion-reveal">
     <h2><span class="num">7</span>能力准备计划（初 / 中 / 高）</h2>
     <div class="road">
       {% for st in pack.generated.prep_plan or [] %}
@@ -382,108 +168,33 @@
   </section>
 
   {% if pack.flags.show_m11 %}
-  <section class="hitl" id="hitl">
+  <section class="hitl motion-reveal" id="hitl">
     <h2>🔄 这份报告哪里不对？</h2>
     <p class="sub">可整体驳回，也可点选快捷动作局部重算；追问后重新生成并保留原报告链接可回看。</p>
     <div class="hitl-row">
       <button type="button" class="hitl-btn danger" data-action="reject_conclusion">✕ 驳回某个结论</button>
       <button type="button" class="hitl-btn" data-action="exclude_jobs">⊘ 排除某类岗位（如外包/销售性质）</button>
-      <button type="button" class="hitl-btn" data-action="add_city">＋ 增加对比城市</button>
+      <button type="button" class="hitl-btn" data-action="switch_direction">⇄ 切换目标岗位</button>
       <button type="button" class="hitl-btn primary" data-action="regenerate" id="hitlRegen">↻ 按追问重新生成</button>
     </div>
     <div class="ask-box">
       <input id="hitlFollowup" placeholder="继续追问，例如：西安和武汉怎么样？/ 对比下数据运营方向…">
       <button type="button" id="hitlSend">发送</button>
     </div>
-    <div class="hitl-status" id="hitlStatus"></div>
+    <div class="hitl-status" id="hitlStatus">
+      <span class="hitl-spinner" aria-hidden="true"></span>
+      <span class="hitl-msg"></span>
+    </div>
   </section>
-  <script>
-  (function () {
-    const reportId = {{ (report_id or '')|tojson }};
-    const direction = {{ pack.query_plan.direction|tojson }};
-    const cities = {{ pack.query_plan.cities|tojson }};
-    const status = document.getElementById("hitlStatus");
-    const input = document.getElementById("hitlFollowup");
-    const apiBase = (location.protocol === "http:" || location.protocol === "https:")
-      ? location.origin
-      : "";
-
-    function showErr(msg) {
-      status.textContent = msg;
-      status.className = "hitl-status err";
-    }
-
-    function detailText(detail) {
-      if (typeof detail === "string") return detail;
-      if (Array.isArray(detail)) {
-        return detail.map((d) => (d && d.msg) || JSON.stringify(d)).join("; ");
-      }
-      if (detail && typeof detail === "object") return JSON.stringify(detail);
-      return "重算失败";
-    }
-
-    async function runHitl(action) {
-      if (!reportId) {
-        showErr("当前为静态报告预览，请从 Web 首页生成报告后再用人在回路重算。");
-        return;
-      }
-      if (!apiBase) {
-        showErr("请通过服务地址打开报告（如 http://主机:8765/report/…），直接打开本地 HTML 无法调用接口。");
-        return;
-      }
-      const followup = (input.value || "").trim();
-      if (action === "regenerate" && !followup) {
-        showErr("请先填写追问内容，或点选上方快捷动作。");
-        return;
-      }
-      if (action === "exclude_jobs" && !followup) {
-        input.value = "不考虑外包/销售性质的数据岗";
-      }
-      if (action === "add_city" && !followup) {
-        input.value = "请增加西安和武汉作为对比城市";
-      }
-      if (action === "reject_conclusion" && !followup) {
-        input.value = "请重新审视第1部分结论，证据不足的表述请改写或删除";
-      }
-      status.className = "hitl-status";
-      status.textContent = "正在按人在回路反馈重算…";
-      try {
-        const res = await fetch(apiBase + "/api/hitl", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            report_id: reportId,
-            direction,
-            cities,
-            action: action || "regenerate",
-            followup: (input.value || "").trim()
-          })
-        });
-        let data = {};
-        try { data = await res.json(); } catch (_) { /* 非 JSON 响应 */ }
-        if (!res.ok) throw new Error(detailText(data.detail) || ("HTTP " + res.status));
-        window.location.href = data.html_url;
-      } catch (err) {
-        const msg = String((err && err.message) || "");
-        if (/failed to fetch|networkerror|load failed/i.test(msg) || (err && err.name === "TypeError")) {
-          showErr("连不上重算接口：请确认已启动 python scripts/serve_wind_agent.py，并从首页生成后的 /report/… 打开本页（勿用 Live Server / 直接打开文件）。");
-          return;
-        }
-        showErr(msg || "请求失败");
-      }
-    }
-
-    document.querySelectorAll("#hitl [data-action]").forEach((btn) => {
-      btn.addEventListener("click", () => runHitl(btn.getAttribute("data-action")));
-    });
-    document.getElementById("hitlSend").addEventListener("click", () => runHitl("regenerate"));
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") runHitl("regenerate");
-    });
-  })();
-  </script>
+  <script type="application/json" id="report-bootstrap">{{ {
+    "report_id": report_id or "",
+    "direction": pack.query_plan.direction,
+    "cities": pack.query_plan.cities
+  }|tojson }}</script>
+  <script src="/static/js/report-hitl.js"></script>
   {% endif %}
 
 </div>
+<script src="/static/js/motion.js"></script>
 </body>
 </html>

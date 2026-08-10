@@ -63,7 +63,7 @@ def _annotate_salary_bars(
     *,
     axis_max_k: float = 50.0,
 ) -> list[dict[str, Any]]:
-    """薪资箱线图定位：固定 0～axis_max_k 轴；色块=P25～P75，竖线=均数。"""
+    """薪资条定位：固定 0～axis_max_k 线性轴；色块=偏低～偏高区间，竖线=平均。"""
     rows = list(salary_by_city or [])
     if not rows:
         return []
@@ -175,6 +175,8 @@ def run_pipeline(
         "metrics_meta": {
             "source": "往届公司招聘信息",
             "job_count": sm.get("job_count"),
+            "city_supply_source": city.get("source") or "",
+            "city_supply_category": city.get("category_name") or "",
         },
     }
     pack.flags["show_m6"] = bool(sal.get("show_m6"))
@@ -269,17 +271,38 @@ def hitl_update_constraints(
     elif act == "exclude_jobs":
         notes.append(fu or "请排除外包/销售性质等岗位后再解读市场能力要求。")
         fu = ""
-    elif act == "add_city":
-        # 从追问中取城市，否则默认追加成都作对比
-        for cand in ("西安", "武汉", "成都", "南京", "苏州", "重庆", "天津"):
-            if cand in fu:
-                if cand not in new_cities:
-                    new_cities.append(cand)
+    elif act in {"switch_direction", "add_city"}:
+        # 切换目标岗位：从追问中识别新方向；旧版 add_city 按钮亦走此逻辑
+        known_dirs = (
+            "数据分析",
+            "产品经理",
+            "后端开发",
+            "前端开发",
+            "算法工程师",
+            "算法",
+            "数据运营",
+            "运营",
+            "测试开发",
+            "测试",
+            "人工智能",
+            "机器学习",
+            "商业分析",
+        )
+        switched = None
+        for cand in known_dirs:
+            if cand and cand in fu and cand != new_direction:
+                switched = cand
                 break
+        if switched:
+            new_direction = switched
+            notes.append(f"用户切换目标岗位为「{switched}」，请按新方向重算市场信号与准备计划。")
         else:
-            if "成都" not in new_cities:
-                new_cities.append("成都")
-        notes.append("用户要求增加对比城市，请在供给与薪资解读中纳入新增城市。")
+            notes.append(
+                fu
+                or "用户要求切换目标岗位方向，请按追问中的新方向重算；若方向不明确请先澄清。"
+            )
+            if fu:
+                fu = ""
     if fu:
         notes.append(fu)
     user_text = base_q

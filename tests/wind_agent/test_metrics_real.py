@@ -81,30 +81,37 @@ def test_compute_skill_major_freq(jobs_fixture: Path, monkeypatch: pytest.Monkey
     assert all(s.get("blurb") for s in result["skills"])
     major_names = [m["name"] for m in result["majors"]]
     assert "统计学 / 应用数学" in major_names or "计算机 / 软件" in major_names
+    # 条形图相对最高项归一：第 1 名 bar_score = 1.0，且不低于其后名次
+    assert result["majors"]
+    assert result["majors"][0]["bar_score"] == 1.0
+    bars = [m["bar_score"] for m in result["majors"]]
+    assert bars == sorted(bars, reverse=True)
 
 
 def test_compute_city_supply_stars(jobs_fixture: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(metrics_real, "_CONFIG_DIR", ROOT / "config" / "wind_agent")
-    result = metrics_real.compute_city_supply_stars(
+    # 默认优先企查查种子库（北京领跑，成都不在第一）
+    result = metrics_real.compute_city_supply_stars("数据分析")
+    assert result["show_block"] is True
+    assert "企查查" in (result.get("source") or "")
+    assert result["cities"][0]["city"] == "北京"
+    assert [c["stars"] for c in result["cities"][:3]] == [5, 4, 3]
+    assert len(result["cities"]) <= 6
+    top = result["cities"][0]
+    assert top["difficulty"] == "较低"
+    assert top["difficulty_class"] == "b-easy"
+    assert result["cities"][-1]["difficulty"] in ("中等", "偏高")
+
+    # 关闭企查查时回退校园详情库 fixture
+    fallback = metrics_real.compute_city_supply_stars(
         "数据分析",
         jobs_path=jobs_fixture,
         min_jobs=3,
+        prefer_qcc=False,
     )
-    assert result["show_block"] is True
-    cities = {c["city"]: c["stars"] for c in result["cities"]}
-    assert "上海" in cities
-    assert "杭州" in cities
-    assert "北京" in cities
-    assert all(1 <= stars <= 5 for stars in cities.values())
-    # 按名次拉开：第1名5星、第2名4星、第3名3星
-    ordered = [c["stars"] for c in result["cities"]]
-    assert ordered == [5, 4, 3]
-    assert len(result["cities"]) <= 6
-    top = result["cities"][0]
-    assert top["difficulty"] == "偏高"
-    assert top["difficulty_class"] == "b-hard"
-    # 3 城时末位为 3 星 → 中等；≥4 城时末位 1 星 → 较低
-    assert result["cities"][-1]["difficulty"] in ("中等", "较低")
+    assert fallback["show_block"] is True
+    assert "降级" in (fallback.get("source") or "") or "往届" in (fallback.get("source") or "")
+    assert {c["city"] for c in fallback["cities"]} >= {"上海", "杭州", "北京"}
 
 
 def test_gate_when_insufficient_jobs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -126,12 +133,18 @@ def test_gate_when_insufficient_jobs(tmp_path: Path, monkeypatch: pytest.MonkeyP
     )
     monkeypatch.setattr(metrics_real, "_CONFIG_DIR", ROOT / "config" / "wind_agent")
     sm = metrics_real.compute_skill_major_freq("数据分析", jobs_path=p, min_jobs=3)
-    city = metrics_real.compute_city_supply_stars("数据分析", jobs_path=p, min_jobs=3)
+    # 技能仍看详情库 → 不足则降级；供给默认走企查查种子库 → 仍可出数
+    city_qcc = metrics_real.compute_city_supply_stars("数据分析", jobs_path=p, min_jobs=3)
+    city_campus = metrics_real.compute_city_supply_stars(
+        "数据分析", jobs_path=p, min_jobs=3, prefer_qcc=False
+    )
     assert sm["degraded"] is True
     assert sm["show_block"] is False
     assert sm["skills"] == []
-    assert city["degraded"] is True
-    assert city["cities"] == []
+    assert city_qcc["show_block"] is True
+    assert "企查查" in (city_qcc.get("source") or "")
+    assert city_campus["degraded"] is True
+    assert city_campus["cities"] == []
 
 
 def test_lookup_role_dictionary(monkeypatch: pytest.MonkeyPatch):

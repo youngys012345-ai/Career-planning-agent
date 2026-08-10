@@ -1,0 +1,17 @@
+/* 共享设计令牌（首页 / 报告页） */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap");
+
+:root {
+  --ink: #0f1c1a;
+  --ink2: #3d4f4b;
+  --ink3: #7a8c87;
+  --sea: #0d6e6e;
+  --sea-deep: #084848;
+  --sand: #c4a35a;
+  --bg: #eef3f1;
+  --card: #fff;
+  --line: #d5e0dc;
+  --good: #1a7f5a;
+  --warn: #b86e00;
+  --radius: 12px;
+}

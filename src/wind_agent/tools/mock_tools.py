@@ -144,9 +144,9 @@ def compute_skill_major_freq(direction: str) -> dict[str, Any]:
             },
         ],
         "majors": [
-            {"name": "统计学 / 应用数学", "tier": "热招", "score": 0.92},
-            {"name": "计算机 / 软件", "tier": "热招", "score": 0.86},
-            {"name": "经济 / 金融", "tier": "有招·次热", "score": 0.52},
+            {"name": "统计学 / 应用数学", "tier": "热招", "score": 0.42, "bar_score": 1.0},
+            {"name": "计算机 / 软件", "tier": "热招", "score": 0.38, "bar_score": 0.9},
+            {"name": "经济 / 金融", "tier": "有招·次热", "score": 0.22, "bar_score": 0.52},
         ],
         "direction": direction,
     }
@@ -156,12 +156,12 @@ def compute_city_supply_stars(direction: str) -> dict[str, Any]:
     return {
         "direction": direction,
         "cities": [
-            {"city": "上海", "stars": 5, "label": "样本内供给最高档", "difficulty": "偏高", "difficulty_class": "b-hard"},
-            {"city": "北京", "stars": 4, "label": "相对高", "difficulty": "偏高", "difficulty_class": "b-hard"},
+            {"city": "上海", "stars": 5, "label": "样本内供给最高档", "difficulty": "较低", "difficulty_class": "b-easy"},
+            {"city": "北京", "stars": 4, "label": "相对高", "difficulty": "较低", "difficulty_class": "b-easy"},
             {"city": "杭州", "stars": 3, "label": "中等偏上", "difficulty": "中等", "difficulty_class": "b-mid"},
-            {"city": "成都", "stars": 2, "label": "中等", "difficulty": "较低", "difficulty_class": "b-easy"},
-            {"city": "武汉", "stars": 1, "label": "相对较低", "difficulty": "较低", "difficulty_class": "b-easy"},
-            {"city": "西安", "stars": 1, "label": "相对较低", "difficulty": "较低", "difficulty_class": "b-easy"},
+            {"city": "成都", "stars": 2, "label": "中等", "difficulty": "偏高", "difficulty_class": "b-hard"},
+            {"city": "武汉", "stars": 1, "label": "相对较低", "difficulty": "偏高", "difficulty_class": "b-hard"},
+            {"city": "西安", "stars": 1, "label": "相对较低", "difficulty": "偏高", "difficulty_class": "b-hard"},
         ],
     }
 

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from wind_agent.adapters import job_db
+from wind_agent.tools import supply_db
 
 _CONFIG_DIR = Path(__file__).resolve().parents[3] / "config" / "wind_agent"
 
@@ -132,10 +133,13 @@ def _to_ranked_items(
         score = round(cnt / total, 4)
         rel = cnt / max_count if max_count else 0.0
         tier = _tier(rel, tiers)
+        # 条形图用相对最高项的比例，保证第 1 名拉满、前后差距更直观
+        bar_score = round(max(0.08, rel), 4)
         item: dict[str, Any] = {
             "name": name,
             "tier": tier,
             "score": score,
+            "bar_score": bar_score,
             "count": cnt,
         }
         if with_skill_meta:
@@ -148,12 +152,12 @@ def _to_ranked_items(
 
 
 def _difficulty_from_supply_stars(stars: int) -> tuple[str, str]:
-    """由岗位供给星级推算综合难度（供给越高 → 竞争越集中 → 难度偏高）。"""
+    """由岗位供给星级推算综合难度（供给越多 → 机会越多 → 难度越低，反比）。"""
     if stars >= 4:
-        return "偏高", "b-hard"
+        return "较低", "b-easy"
     if stars == 3:
         return "中等", "b-mid"
-    return "较低", "b-easy"
+    return "偏高", "b-hard"
 
 
 def _count_to_stars(counts: dict[str, int], *, top_n: int = 6) -> list[dict[str, Any]]:
@@ -243,10 +247,33 @@ def compute_city_supply_stars(
     direction: str,
     *,
     jobs_path: str | Path | None = None,
+    supply_path: str | Path | None = None,
+    prefer_qcc: bool = True,
     exclude_intern: bool = True,
     min_jobs: int = 3,
 ) -> dict[str, Any]:
-    """分城计数 → 1–5 星相对供给。"""
+    """分城供给星级：优先企查查快照，缺失时回退校园详情库。"""
+    if prefer_qcc:
+        qcc = supply_db.lookup_city_supply(direction, path=supply_path)
+        if qcc.get("ok") and qcc.get("cities"):
+            counts = {
+                str(c["city"]): int(c["job_count"])
+                for c in qcc["cities"]
+                if c.get("city") and int(c.get("job_count") or 0) > 0
+            }
+            cities = _count_to_stars(counts)
+            return {
+                "direction": direction,
+                "cities": cities,
+                "job_count": int(qcc.get("job_count_total") or sum(counts.values())),
+                "show_block": bool(cities),
+                "degraded": False,
+                "source": "企查查招聘地区排行",
+                "category_name": qcc.get("category_name"),
+                "search_key": qcc.get("search_key"),
+                "supply_db": "qcc_city_supply_v0",
+            }
+
     jobs = job_db.filter_jobs(
         direction,
         path=jobs_path,
@@ -260,7 +287,8 @@ def compute_city_supply_stars(
             "job_count": total,
             "show_block": False,
             "degraded": True,
-            "message": f"详情库命中不足（{total}<{min_jobs}），无法计算分城星级",
+            "message": f"供给库与详情库均不足以计算分城星级（详情命中 {total}<{min_jobs}）",
+            "source": "往届公司招聘信息",
         }
 
     city_list = _load_json("city_aliases.json").get("cities") or []
@@ -276,5 +304,6 @@ def compute_city_supply_stars(
         "job_count": total,
         "show_block": bool(city_counts),
         "degraded": not city_counts,
-        "source": "往届公司招聘信息",
+        "source": "往届公司招聘信息（供给库未命中，已降级）",
+        "fallback": True,
     }

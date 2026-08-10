@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>求职风向 Agent</title>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/landing.css">
+<link rel="stylesheet" href="/static/css/motion.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="gate motion-enter">
+    <span class="chip motion-stagger">Market-first · 市场风向驱动</span>
+    <div class="brand motion-stagger">求职风向</div>
+    <p class="tagline motion-stagger">按你的<strong>意愿方向</strong>读市场要什么能力与如何准备——不是用已有条件做岗位匹配。</p>
+    <form id="f">
+      <label class="motion-stagger" for="query">你的意愿 / 问题</label>
+      <textarea class="motion-stagger" id="query" name="query" placeholder="例：想往数据分析走，该补什么？">我现在是大二统计专业学生，以后想找数据分析岗位工作，我应该如何准备。</textarea>
+
+      <label class="motion-stagger" for="direction">方向（可点选或手填）</label>
+      <div class="opts motion-stagger" id="dirOpts">
+        <span class="opt on" data-v="数据分析">数据分析</span>
+        <span class="opt" data-v="产品经理">产品经理</span>
+        <span class="opt" data-v="后端开发">后端开发</span>
+        <span class="opt" data-v="__open__">其他（手填）</span>
+      </div>
+      <input class="motion-stagger" id="direction" name="direction" type="text" value="数据分析" placeholder="开放方向时在此填写">
+
+      <button class="motion-stagger" type="submit" id="btn">
+        <span class="btn-spinner" aria-hidden="true"></span>
+        <span class="btn-label">生成风向报告</span>
+      </button>
+      <div id="status" class="motion-stagger"></div>
+      <p class="hint motion-stagger">报告底部支持人在回路：可改方向/城市后局部重算。</p>
+    </form>
+  </div>
+</div>
+<script src="/static/js/motion.js"></script>
+<script src="/static/js/landing.js"></script>
+</body>
+</html>

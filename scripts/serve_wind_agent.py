@@ -1,8 +1,16 @@
 #!/usr/bin/env python
-"""启动求职风向 Agent Web Demo（uvicorn）。"""
+"""启动求职风向 Agent Web Demo（uvicorn）。
+
+环境：
+  - 公网展示：WIND_AGENT_ENV=public（默认）→ 0.0.0.0:8765
+  - 本地开发：WIND_AGENT_ENV=dev → 127.0.0.1:8766（仅本机）
+
+可用环境变量覆盖：WIND_HOST / WIND_PORT / WIND_RELOAD
+"""
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -18,22 +26,52 @@ if _env.is_file():
             continue
         key, _, val = line.partition("=")
         key, val = key.strip(), val.strip()
-        if key and key not in __import__("os").environ:
-            __import__("os").environ[key] = val
+        if key and key not in os.environ:
+            os.environ[key] = val
+
+
+def _resolve_bind() -> tuple[str, str, int, bool]:
+    """返回 (环境名, host, port, reload)。"""
+    env_name = (os.getenv("WIND_AGENT_ENV") or "public").strip().lower()
+    if env_name in {"dev", "development", "local"}:
+        env_name = "dev"
+        default_host, default_port = "127.0.0.1", 8766
+    else:
+        env_name = "public"
+        default_host, default_port = "0.0.0.0", 8765
+
+    host = (os.getenv("WIND_HOST") or default_host).strip()
+    port = int(os.getenv("WIND_PORT") or default_port)
+    reload = (os.getenv("WIND_RELOAD") or ("1" if env_name == "dev" else "0")).strip() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    return env_name, host, port, reload
 
 
 def main() -> int:
     import uvicorn
 
+    env_name, host, port, reload = _resolve_bind()
+    display_host = "127.0.0.1" if host in {"0.0.0.0", "::"} else host
+
     print("求职风向 Agent Web Demo")
-    print("  地址：http://127.0.0.1:8765/")
-    print("  健康：http://127.0.0.1:8765/health")
+    print(f"  环境：{env_name}")
+    print(f"  地址：http://{display_host}:{port}/")
+    print(f"  健康：http://{display_host}:{port}/health")
+    if env_name == "dev":
+        print("  说明：开发服务默认仅本机可访问；公网展示请用 /opt 环境 + sync_to_public.sh")
+    else:
+        print("  说明：公网展示环境；开发请在 /home/projects 用 serve_dev.py")
     print("  提示：复制 .env.example → .env 后按需配置模型密钥")
+
     uvicorn.run(
         "wind_agent.webapp:app",
-        host="0.0.0.0",
-        port=8765,
-        reload=False,
+        host=host,
+        port=port,
+        reload=reload,
     )
     return 0
 
