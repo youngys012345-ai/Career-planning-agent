@@ -12,27 +12,28 @@ from wind_agent.pack import EvidencePack
 
 
 def clarify_intent(user_text: str = "", direction: str = "", cities: list[str] | None = None) -> dict[str, Any]:
-    """解析意愿；缺方向时返回 3+1 选项。"""
-    d = (direction or "").strip()
-    if not d:
-        # 极简启发式：从文本抽关键词
-        for cand in ("数据分析", "产品经理", "后端开发", "算法"):
-            if cand in (user_text or ""):
-                d = cand
-                break
+    """解析意愿；支持模糊归一（如 agent算法工程师 → 算法）。"""
+    from wind_agent.adapters.direction_alias import resolve_direction
+
+    raw = (direction or "").strip()
+    chosen = resolve_direction(user_text=user_text or "", direction=raw)
+    d = (chosen.canonical or "").strip()
     if not d:
         return {
             "need_clarify": True,
-            "options": ["数据分析", "产品经理", "后端开发", "__open__"],
-            "prompt": "请选择意愿方向（第 4 项可开放补充）",
+            "options": ["数据分析", "产品经理", "后端开发", "算法", "__open__"],
+            "prompt": "请选择意愿方向（最后一项可开放补充）",
         }
+    extras = chosen.as_extras()
+    if raw and raw != d and chosen.rewritten:
+        extras = {**extras, "direction_chip": raw, "direction_from_query": chosen.original != raw}
     return {
         "need_clarify": False,
         "query_plan": {
             "direction": d,
             "cities": cities or ["全国主要城"],
             "user_query": user_text or "",
-            "extras": {},
+            "extras": extras,
         },
     }
 
@@ -301,34 +302,99 @@ def _stub_capability_plan(
     focus = "、".join(top) if top else "核心岗位能力"
     hint = f"（结合提问：{user_text[:40]}…）" if len(user_text) > 40 else (f"（结合提问：{user_text}）" if user_text else "")
     d = direction or "目标方向"
+    # 按方向给不同准备叙事，避免算法/后端仍套用数据分析 BI 话术
+    if d in {"算法", "人工智能"} or "算法" in d:
+        mid_goal = "做出可展示的模型/算法专题作品，补齐工程化能力"
+        actions = [
+            [
+                f"每周固定练习 {focus} 中的 1–2 项：完成可复现实验（数据→特征/表示→训练→评估指标）。",
+                "用课程或公开数据集走通一条最小训练链路，写清任务定义、基线与误差分析。",
+                "整理技能清单与缺口：对照市场高频技能标出已会 / 学习中 / 未开始。",
+            ],
+            [
+                "独立完成 1–2 个算法专题（分类/检索/生成或 CV/NLP 之一），附实验记录与可复现代码。",
+                "补齐 Python 工程与基础部署能力（环境、日志、简单服务化），避免只会 notebook。",
+                "练习把实验结论讲给非算法同学：任务、方法取舍、指标含义与局限。",
+            ],
+            [
+                "挑 1 个更难任务做对比实验（换模型/特征/损失函数），写清假设、限制与验证方式。",
+                "作品集迭代：突出问题背景、方法选择理由与指标提升，而非只堆框架名。",
+                "对照分城供给与薪资认知做城市与准备节奏规划，保持市场信号复盘习惯。",
+            ],
+        ]
+    elif d in {"后端开发", "前端开发", "测试"} or any(x in d for x in ("后端", "前端", "测试")):
+        mid_goal = "形成可演示的工程作品，补齐中频技能"
+        actions = [
+            [
+                f"每周固定练习 {focus} 中的 1–2 项，完成可运行小项目（含接口/页面与基础测试）。",
+                "用课程项目走通「需求 → 设计 → 实现 → 自测」闭环，写清模块边界。",
+                "整理技能清单与缺口：对照市场高频技能标出已会 / 学习中 / 未开始。",
+            ],
+            [
+                "独立完成 1–2 个可演示系统（CRUD 服务、小工具或自动化脚本），附 README 与运行说明。",
+                "补齐数据库/并发/工程规范短板中与方向最相关的 1–2 项。",
+                "模拟技术沟通：用一页纸说明架构取舍、风险与下一步。",
+            ],
+            [
+                "挑 1 个性能或稳定性问题做排查与优化，写清假设、验证与结果。",
+                "作品集迭代：突出问题背景、方案理由与可维护性，而非只堆技术名词。",
+                "对照分城供给与薪资认知做城市与准备节奏规划，保持市场信号复盘习惯。",
+            ],
+        ]
+    elif d == "产品经理" or "产品" in d:
+        mid_goal = "形成可展示的产品分析/方案作品，补齐中频技能"
+        actions = [
+            [
+                f"每周固定练习 {focus} 中的 1–2 项：输出问题定义、用户画像与需求清单。",
+                "用课程或实习场景走通「发现 → 方案 → 评审材料」一遍，写清成功指标。",
+                "整理技能清单与缺口：对照市场高频技能标出已会 / 学习中 / 未开始。",
+            ],
+            [
+                "独立完成 1–2 个产品专题（竞品拆解、需求文档或原型），能讲清取舍。",
+                "补齐数据意识与原型表达短板，保证方案能落到指标与路径。",
+                "模拟跨角色沟通：把方案改写成研发/运营都能看懂的版本。",
+            ],
+            [
+                "挑 1 个复杂权衡题（范围/优先级/风险），写清假设、限制与验证方式。",
+                "作品集迭代：突出问题背景、决策理由与业务影响，而非只堆方法论名词。",
+                "对照分城供给与薪资认知做城市与准备节奏规划，保持市场信号复盘习惯。",
+            ],
+        ]
+    else:
+        mid_goal = "形成可展示的专题分析作品，补齐中频技能"
+        actions = [
+            [
+                f"每周固定练习 {focus} 中的 1–2 项，完成可复现的小作业（含 SQL/取数与简单可视化）。",
+                "用课程项目把「问题定义 → 数据准备 → 分析 → 结论」走通一遍，写清指标口径。",
+                "整理个人技能清单与缺口：对照市场高频技能标出已会 / 学习中 / 未开始。",
+            ],
+            [
+                "独立完成 1–2 个业务向专题（如留存、转化、运营复盘），输出报告与可复现笔记本。",
+                "补齐 BI/可视化与 Python 数据处理短板，保证图表能讲清故事。",
+                "模拟业务沟通：把分析结论改写成「给非技术同学看的一页纸建议」。",
+            ],
+            [
+                "挑 1 个复杂指标拆解题（多表关联、漏斗或归因），写清假设、限制与验证方式。",
+                "作品集迭代：突出问题背景、方法选择理由、业务影响，而非只堆工具名。",
+                "对照分城供给与薪资认知做城市与准备节奏规划，保持市场信号复盘习惯。",
+            ],
+        ]
     return {
         "stages": [
             {
                 "level": "初级",
-                "goal": f"为大二起的{d}路径打底：工具 + 统计思维{hint}",
-                "action_items": [
-                    f"每周固定练习 {focus} 中的 1–2 项，完成可复现的小作业（含 SQL/取数与简单可视化）。",
-                    "用课程项目把「问题定义 → 数据准备 → 分析 → 结论」走通一遍，写清指标口径。",
-                    "整理个人技能清单与缺口：对照市场高频技能标出已会 / 学习中 / 未开始。",
-                ],
+                "goal": f"为大二起的{d}路径打底：核心工具与基础能力{hint}",
+                "action_items": actions[0],
             },
             {
                 "level": "中级",
-                "goal": "形成可展示的专题分析作品，补齐中频技能",
-                "action_items": [
-                    "独立完成 1–2 个业务向专题（如留存、转化、运营复盘），输出报告与可复现笔记本。",
-                    "补齐 BI/可视化与 Python 数据处理短板，保证图表能讲清故事。",
-                    "模拟业务沟通：把分析结论改写成「给非技术同学看的一页纸建议」。",
-                ],
+                "goal": mid_goal,
+                "action_items": actions[1],
             },
             {
                 "level": "高级",
                 "goal": "对齐校招高频要求，准备作品集与口径表达",
-                "action_items": [
-                    "挑 1 个复杂指标拆解题（多表关联、漏斗或归因），写清假设、限制与验证方式。",
-                    "作品集迭代：突出问题背景、方法选择理由、业务影响，而非只堆工具名。",
-                    "对照分城供给与薪资认知做城市与准备节奏规划，保持市场信号复盘习惯。",
-                ],
+                "action_items": actions[2],
             },
         ],
         "model": "stub",
@@ -376,7 +442,12 @@ def build_capability_plan(
             import json as _json
 
             parsed = _json.loads(llm.extract_json_text(content))
-            stages = parsed.get("stages") if isinstance(parsed, dict) else None
+            if isinstance(parsed, list):
+                stages = parsed
+            elif isinstance(parsed, dict):
+                stages = parsed.get("stages")
+            else:
+                stages = None
             if stages and isinstance(stages, list):
                 return {"stages": stages, "model": llm.get_model()}
         except Exception:
@@ -385,19 +456,30 @@ def build_capability_plan(
 
 
 def _stub_core_conclusions(pack_summary: dict[str, Any] | None) -> dict[str, Any]:
-    direction = (pack_summary or {}).get("direction") or "目标方向"
+    summary = pack_summary or {}
+    direction = summary.get("direction") or "目标方向"
+    skills = [s.get("name") for s in (summary.get("skills") or []) if s.get("name")]
+    majors = [m.get("name") for m in (summary.get("majors") or []) if m.get("name")]
+    cities = summary.get("city_supply_stars") or []
+    skill_text = "、".join(skills[:4]) if skills else "该方向常见核心技能"
+    major_text = "、".join(majors[:3]) if majors else "相关对口专业"
+    if cities:
+        top_city = cities[0]
+        city_text = f"样本内分城供给呈相对梯度，{top_city.get('city') or '头部城市'}相对更集中。"
+    else:
+        city_text = "样本内分城供给呈相对梯度，宜用星级理解相对岗位量。"
     return {
         "conclusions": [
             {
-                "text": f"{direction}方向下，市场高频能力集中在 SQL、业务指标与可视化工具。",
+                "text": f"{direction}方向下，市场高频能力更集中在 {skill_text}。",
                 "evidence": "依据：第3部分 技能词频",
             },
             {
-                "text": "专业侧统计/计科出现更勤，经管类有招但相对次热。",
+                "text": f"专业侧更常见 {major_text}；其余专业有招但相对次热。",
                 "evidence": "依据：第3部分 专业词频",
             },
             {
-                "text": "样本内分城供给呈相对梯度，宜用星级理解相对岗位量。",
+                "text": city_text,
                 "evidence": "依据：第4部分 分城岗位供给",
             },
         ],
@@ -443,7 +525,12 @@ def build_core_conclusions(pack_summary: dict[str, Any] | None = None) -> dict[s
             import json as _json
 
             parsed = _json.loads(llm.extract_json_text(content))
-            conclusions = parsed.get("conclusions") if isinstance(parsed, dict) else None
+            if isinstance(parsed, list):
+                conclusions = parsed
+            elif isinstance(parsed, dict):
+                conclusions = parsed.get("conclusions")
+            else:
+                conclusions = None
             if conclusions and isinstance(conclusions, list):
                 return {"conclusions": conclusions[:3], "model": llm.get_model()}
         except Exception:

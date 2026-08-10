@@ -6,39 +6,10 @@ import json
 from pathlib import Path
 from typing import Any, Iterator
 
-# 方向 → 检索关键词（标题/薪资行/描述/公司名）
-DIRECTION_KEYWORDS: dict[str, list[str]] = {
-    "数据分析": [
-        "数据分析",
-        "数据分析师",
-        "商业分析",
-        "BI",
-        "数据挖掘",
-        "数据运营",
-        "数据科学家",
-        "数据开发",
-    ],
-    "产品经理": [
-        "产品经理",
-        "产品专员",
-        "产品策划",
-        "产品运营",
-        "产品助理",
-        "PM",
-    ],
-    "后端开发": [
-        "后端",
-        "服务端",
-        "后台开发",
-        "Java开发",
-        "Java工程师",
-        "Golang",
-        "Go开发",
-        "Python开发",
-        "研发工程师JAVA",
-        "研发工程师C/C++",
-    ],
-}
+from wind_agent.adapters.direction_alias import (
+    DIRECTION_KEYWORDS,
+    direction_keywords as _alias_direction_keywords,
+)
 
 _DEFAULT_JOBS_PATH = (
     Path(__file__).resolve().parents[3] / "data" / "snapshot" / "campus985_v0" / "jobs.jsonl"
@@ -62,11 +33,8 @@ def _searchable_text(job: dict[str, Any]) -> str:
 
 
 def direction_keywords(direction: str) -> list[str]:
-    """返回方向对应关键词；未知方向用方向名本身。"""
-    d = (direction or "").strip()
-    if d in DIRECTION_KEYWORDS:
-        return DIRECTION_KEYWORDS[d]
-    return [d] if d else []
+    """返回方向对应关键词（含模糊归一，如 agent算法工程师 → 算法相关词）。"""
+    return _alias_direction_keywords(direction)
 
 
 def matches_direction(job: dict[str, Any], direction: str) -> bool:

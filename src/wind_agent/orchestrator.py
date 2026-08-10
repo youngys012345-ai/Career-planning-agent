@@ -272,27 +272,19 @@ def hitl_update_constraints(
         notes.append(fu or "请排除外包/销售性质等岗位后再解读市场能力要求。")
         fu = ""
     elif act in {"switch_direction", "add_city"}:
-        # 切换目标岗位：从追问中识别新方向；旧版 add_city 按钮亦走此逻辑
-        known_dirs = (
-            "数据分析",
-            "产品经理",
-            "后端开发",
-            "前端开发",
-            "算法工程师",
-            "算法",
-            "数据运营",
-            "运营",
-            "测试开发",
-            "测试",
-            "人工智能",
-            "机器学习",
-            "商业分析",
+        # 切换目标岗位：模糊归一追问中的新方向；旧版 add_city 亦走此逻辑
+        from wind_agent.adapters.direction_alias import (
+            extract_direction_from_text,
+            normalize_direction,
         )
+
         switched = None
-        for cand in known_dirs:
-            if cand and cand in fu and cand != new_direction:
-                switched = cand
-                break
+        if fu:
+            norm = normalize_direction(fu)
+            if not norm.matched_alias:
+                norm = extract_direction_from_text(fu)
+            if norm.canonical and norm.canonical != new_direction:
+                switched = norm.canonical
         if switched:
             new_direction = switched
             notes.append(f"用户切换目标岗位为「{switched}」，请按新方向重算市场信号与准备计划。")

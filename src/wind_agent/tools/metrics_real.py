@@ -185,12 +185,15 @@ def _count_to_stars(counts: dict[str, int], *, top_n: int = 6) -> list[dict[str,
 
 
 def lookup_role_dictionary(direction: str) -> dict[str, Any]:
-    """读取方向→子岗词典。"""
+    """读取方向→子岗词典（方向先模糊归一）。"""
+    from wind_agent.adapters.direction_alias import canonical_direction
+
     catalog = _load_json("role_dictionary.json")
-    subroles = catalog.get(direction) or [
-        {"name": f"{direction}相关岗位", "tag": "通用"},
+    key = canonical_direction(direction) or (direction or "").strip()
+    subroles = catalog.get(key) or catalog.get(direction) or [
+        {"name": f"{key or direction}相关岗位", "tag": "通用"},
     ]
-    return {"direction": direction, "subroles": subroles, "source": "role_dictionary.json"}
+    return {"direction": key or direction, "subroles": subroles, "source": "role_dictionary.json"}
 
 
 def compute_skill_major_freq(

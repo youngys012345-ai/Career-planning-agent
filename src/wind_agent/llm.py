@@ -66,19 +66,78 @@ def chat(messages: list[dict[str, str]], *, temperature: float = 0.3) -> str | N
         return None
 
 
+def _strip_code_fence(text: str) -> str:
+    text = (text or "").strip()
+    if not text.startswith("```"):
+        return text
+    lines = text.splitlines()
+    if lines and lines[0].startswith("```"):
+        lines = lines[1:]
+    if lines and lines[-1].strip() == "```":
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
+
+
+def _balanced_json_slice(text: str, opener: str, closer: str) -> str | None:
+    """从首个 opener 起做括号配平截取，避免 rfind 误吃内层数组。"""
+    start = text.find(opener)
+    if start < 0:
+        return None
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_str:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+            continue
+        if ch == opener:
+            depth += 1
+        elif ch == closer:
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
 def extract_json_text(content: str) -> str:
-    """从模型输出中抽出 JSON（去掉 ```json 围栏）。"""
-    text = (content or "").strip()
-    if text.startswith("```"):
-        lines = text.splitlines()
-        # 去掉首尾围栏行
-        if lines and lines[0].startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        text = "\n".join(lines).strip()
-    # 尝试截取首个 [ 或 { 到末尾匹配
-    for opener, closer in (("[", "]"), ("{", "}")):
+    """从模型输出中抽出 JSON（去掉 ```json 围栏）。
+
+    优先完整对象（如 {"conclusions":[...]}），避免先截到内层数组导致
+    上层 `.get("conclusions")` 失败并落入数据分析向 stub。
+    """
+    import json as _json
+
+    text = _strip_code_fence(content)
+    if not text:
+        return text
+    try:
+        _json.loads(text)
+        return text
+    except Exception:
+        pass
+
+    # 先试对象、再试数组；配平失败或非法 JSON 则换候选
+    for opener, closer in (("{", "}"), ("[", "]")):
+        snippet = _balanced_json_slice(text, opener, closer)
+        if not snippet:
+            continue
+        try:
+            _json.loads(snippet)
+            return snippet
+        except Exception:
+            continue
+
+    # 兜底：旧逻辑（首尾字符）
+    for opener, closer in (("{", "}"), ("[", "]")):
         start = text.find(opener)
         end = text.rfind(closer)
         if start != -1 and end != -1 and end > start:

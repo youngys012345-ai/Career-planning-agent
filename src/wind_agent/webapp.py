@@ -126,9 +126,21 @@ def _run_and_save(
     return report_id, pack, html
 
 
+def _static_asset_version() -> str:
+    """用静态资源 mtime 做缓存破坏，避免公网浏览器继续用旧 JS。"""
+    newest = 0
+    for rel in ("js/landing.js", "js/motion.js", "css/landing.css", "css/motion.css"):
+        path = STATIC_DIR / rel
+        try:
+            newest = max(newest, int(path.stat().st_mtime))
+        except OSError:
+            continue
+    return str(newest or 1)
+
+
 def _landing_page_html() -> str:
     """渲染首页 Jinja 模板。"""
-    return _jinja_env.get_template("index.html").render()
+    return _jinja_env.get_template("index.html").render(asset_v=_static_asset_version())
 
 
 def create_app() -> FastAPI:

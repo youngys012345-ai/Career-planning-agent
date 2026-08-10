@@ -56,6 +56,14 @@ if [[ -f "$DEV_ROOT/requirements.txt" ]]; then
   rsync -a "$DEV_ROOT/requirements.txt" "$PUBLIC_ROOT/requirements.txt"
 fi
 
+# 同步离线快照库（企查查供给 / 薪资 / 校园详情），不含运行时报告
+if [[ -d "$DEV_ROOT/data/snapshot" ]]; then
+  mkdir -p "$PUBLIC_ROOT/data/snapshot"
+  rsync -a --delete \
+    --exclude '__pycache__/' \
+    "$DEV_ROOT/data/snapshot/" "$PUBLIC_ROOT/data/snapshot/"
+fi
+
 # 记录最近一次发布时间（不含密钥）
 date -u +"%Y-%m-%dT%H:%M:%SZ" > "$PUBLIC_ROOT/.public_synced_at"
 echo "$DEV_ROOT" > "$PUBLIC_ROOT/.public_synced_from"

@@ -36,12 +36,36 @@ def test_landing_page_uses_static_and_copy():
     res = client.get("/")
     assert res.status_code == 200
     html = res.text
-    assert "求职风向" in html
+    assert "求职风向标" in html
     assert "市场风向驱动" in html
+    assert "面向在校大学生" in html
+    assert "推荐方向" in html
     assert "/static/js/landing.js" in html
     assert "/static/css/tokens.css" in html
     assert "/static/css/motion.css" in html
     assert "motion-enter" in html
+
+
+def test_landing_js_syncs_query_with_recommended_direction():
+    """点选推荐方向须同步替换上方 query，避免仍提交默认数据分析文案。"""
+    js = (ROOT / "src/wind_agent/static/js/landing.js").read_text(encoding="utf-8")
+    assert "PRESET_QUERIES" in js
+    assert "applyRecommendedDirection" in js
+    assert "setQueryText" in js
+    assert "query-flash" in js
+    assert 'e.key !== "Enter"' in js
+    for key in ("数据分析", "产品经理", "后端开发", "算法"):
+        assert key in js
+    assert "算法工程师" in js
+
+
+def test_landing_chips_carry_data_query_and_cache_bust():
+    client = TestClient(create_app())
+    html = client.get("/").text
+    assert 'data-query="' in html
+    assert "算法工程师" in html
+    assert "/static/js/landing.js?v=" in html
+    assert "回车即可生成" in html
 
 
 def test_report_html_references_static_and_bootstrap():

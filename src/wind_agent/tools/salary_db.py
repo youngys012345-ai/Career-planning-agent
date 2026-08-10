@@ -7,6 +7,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from wind_agent.adapters.direction_alias import canonical_direction, direction_hints
+
 _DEFAULT_PATH = (
     Path(__file__).resolve().parents[3]
     / "data"
@@ -14,14 +16,6 @@ _DEFAULT_PATH = (
     / "liepin_salary_v0"
     / "salaries.jsonl"
 )
-
-# 方向 → 薪资库类目名关键字（用于匹配 category_name / aliases）
-_DIRECTION_HINTS: dict[str, list[str]] = {
-    "数据分析": ["数据分析", "数据科学", "商业分析", "数据开发"],
-    "产品经理": ["产品经理", "产品"],
-    "后端开发": ["后端", "Java", "服务端", "软件开发"],
-    "算法": ["算法", "人工智能", "机器学习"],
-}
 
 
 @lru_cache(maxsize=1)
@@ -40,7 +34,7 @@ def _load_rows(path_str: str) -> list[dict[str, Any]]:
 
 
 def _match_score(direction: str, row: dict[str, Any]) -> int:
-    hints = _DIRECTION_HINTS.get(direction) or [direction]
+    hints = direction_hints(direction)
     blob = " ".join(
         [
             str(row.get("category_name") or ""),
@@ -49,9 +43,11 @@ def _match_score(direction: str, row: dict[str, Any]) -> int:
         ]
     )
     score = 0
+    # 用规范方向给精确命中加分，避免「agent算法工程师」整串对不上
+    d = canonical_direction(direction) or (direction or "").strip()
     for h in hints:
         if h and h in blob:
-            score += 10 if h == direction else 5
+            score += 10 if h == d else 5
     return score
 
 
