@@ -36,14 +36,26 @@ def test_landing_page_uses_static_and_copy():
     res = client.get("/")
     assert res.status_code == 200
     html = res.text
-    assert "求职风向标" in html
+    assert "职向标" in html
+    assert "求职风向助手" in html
     assert "市场风向驱动" in html
     assert "面向在校大学生" in html
     assert "推荐方向" in html
+    assert "product-name" in html
+    assert "page-bg" in html
+    assert 'class="landing"' in html or "landing" in html
     assert "/static/js/landing.js" in html
     assert "/static/css/tokens.css" in html
     assert "/static/css/motion.css" in html
     assert "motion-enter" in html
+
+
+def test_landing_css_covers_full_viewport_background():
+    css = (ROOT / "src/wind_agent/static/css/landing.css").read_text(encoding="utf-8")
+    assert "min-height: 100dvh" in css
+    assert "position: fixed" in css
+    assert ".page-bg" in css
+    assert "linear-gradient" in css
 
 
 def test_landing_js_syncs_query_with_recommended_direction():
@@ -65,7 +77,11 @@ def test_landing_chips_carry_data_query_and_cache_bust():
     assert 'data-query="' in html
     assert "算法工程师" in html
     assert "/static/js/landing.js?v=" in html
-    assert "回车即可生成" in html
+    assert "回车生成" in html
+    assert "其他（手填）" not in html
+    assert 'type="hidden"' in html and 'id="direction"' in html
+    # 推荐方向应出现在提问框之前
+    assert html.find("dirOpts") < html.find('id="query"')
 
 
 def test_report_html_references_static_and_bootstrap():

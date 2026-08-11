@@ -57,6 +57,14 @@ scripts/*
 !scripts/sync_to_public.sh
 !scripts/crawl_qcc_city_supply.py
 !scripts/run_wind_agent_demo.py
+!scripts/enable_public_https.sh
+
+# ========== deploy：Nginx HTTPS 反代模板 ==========
+!deploy/
+deploy/*
+!deploy/nginx/
+deploy/nginx/*
+!deploy/nginx/*.conf
 
 # ========== src：仅 wind_agent ==========
 src/*

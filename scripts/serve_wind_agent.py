@@ -3,9 +3,11 @@
 
 环境：
   - 公网展示：WIND_AGENT_ENV=public（默认）→ 0.0.0.0:8765
+  - 公网反代：WIND_HOST=127.0.0.1（或 sync 时 WIND_BEHIND_PROXY=1）→ 仅本机，由 Nginx HTTPS 对外
   - 本地开发：WIND_AGENT_ENV=dev → 127.0.0.1:8766（仅本机）
 
 可用环境变量覆盖：WIND_HOST / WIND_PORT / WIND_RELOAD
+域名与反代说明见：docs/guide/public-https-reverse-proxy.md
 """
 
 from __future__ import annotations
@@ -65,6 +67,8 @@ def main() -> int:
         print("  说明：开发服务默认仅本机可访问；公网展示请用 /opt 环境 + sync_to_public.sh")
     else:
         print("  说明：公网展示环境；开发请在 /home/projects 用 serve_dev.py")
+        if host == "127.0.0.1":
+            print("  反代：已仅本机监听，请用 Nginx HTTPS 对外（见 docs/guide/public-https-reverse-proxy.md）")
     print("  提示：复制 .env.example → .env 后按需配置模型密钥")
 
     uvicorn.run(

@@ -66,12 +66,8 @@
   }
 
   function applyRecommendedDirection(v, presetFromChip) {
-    if (v === "__open__") {
-      dirInput.value = "";
-      dirInput.focus();
-      return;
-    }
-    dirInput.value = v || "";
+    if (!v) return;
+    dirInput.value = v;
     var preset = (presetFromChip || "").trim() || PRESET_QUERIES[v] || "";
     if (preset) {
       setQueryText(preset);
@@ -134,14 +130,6 @@
   queryInput.addEventListener("keydown", function (e) {
     if (e.key !== "Enter") return;
     if (e.shiftKey) return;
-    if (e.isComposing || e.keyCode === 229) return;
-    e.preventDefault();
-    triggerSubmit();
-  });
-
-  // 方向手填框：回车同样提交
-  dirInput.addEventListener("keydown", function (e) {
-    if (e.key !== "Enter") return;
     if (e.isComposing || e.keyCode === 229) return;
     e.preventDefault();
     triggerSubmit();
